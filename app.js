@@ -46,10 +46,43 @@ function parseGroups(rows){
     .map(r=>({group:norm(r[0]),player:norm(r[1]),role:norm(r[2])}));
 }
 function parseSchedule(rows){
-  const h=headerIndex(rows,r=>norm(r[0]).toLowerCase()=="week"&&norm(r[3]).toLowerCase()=="group");
-  if(h<0)return[];
-  return rows.slice(h+1).filter(r=>norm(r[0])&&norm(r[4])&&norm(r[5]))
-    .map(r=>({week:parseInt(r[0])||0,date:norm(r[1]),time:norm(r[2]),group:norm(r[3]),p1:norm(r[4]),p2:norm(r[5])}));
+  const clean=s=>norm(s).toLowerCase().replace(/\s+/g," ").trim();
+  const h=rows.findIndex(r=>{
+    const vals=r.map(clean);
+    return vals.includes("week") &&
+           vals.includes("group") &&
+           vals.some(v=>v==="player 1"||v==="player1") &&
+           vals.some(v=>v==="player 2"||v==="player2");
+  });
+  if(h<0){
+    console.error("Schedule header not found. First rows:",rows.slice(0,8));
+    return[];
+  }
+
+  const hdr=rows[h].map(clean);
+  const ix={
+    week:hdr.indexOf("week"),
+    date:hdr.findIndex(v=>v==="date"||v.includes("date")),
+    time:hdr.findIndex(v=>v==="time"||v.includes("time")),
+    group:hdr.indexOf("group"),
+    p1:hdr.findIndex(v=>v==="player 1"||v==="player1"),
+    p2:hdr.findIndex(v=>v==="player 2"||v==="player2")
+  };
+
+  if(ix.date<0) ix.date=ix.week+1;
+  if(ix.time<0) ix.time=ix.week+2;
+
+  return rows.slice(h+1)
+    .filter(r=>norm(r[ix.week]) && norm(r[ix.group]) && norm(r[ix.p1]) && norm(r[ix.p2]))
+    .map(r=>({
+      week:parseInt(norm(r[ix.week]).replace(/\D/g,""))||0,
+      date:norm(r[ix.date]),
+      time:norm(r[ix.time]),
+      group:norm(r[ix.group]).replace(/^group\s+/i,"").trim(),
+      p1:norm(r[ix.p1]),
+      p2:norm(r[ix.p2])
+    }))
+    .filter(m=>m.week>0 && /^[A-G]$/i.test(m.group));
 }
 function parseResults(rows){
   const h=headerIndex(rows,r=>norm(r[0]).toLowerCase()=="week"&&norm(r[11]).toLowerCase()=="winner");
