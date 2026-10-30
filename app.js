@@ -7,30 +7,38 @@ const norm=s=>String(s??"").trim();
 const num=v=>{const n=parseFloat(String(v??"").replace("%",""));return Number.isFinite(n)?n:0};
 const pct=v=>v===""||v==null?"—":(Number(v)*100).toFixed(0)+"%";
 
-function csvUrl(sheet){
-  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}`;
+function gvizUrl(sheet,callback){
+  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?headers=1&tqx=responseHandler:${callback}&sheet=${encodeURIComponent(sheet)}`;
 }
-function parseCSV(text){
-  const rows=[];let row=[],cell="",q=false;
-  for(let i=0;i<text.length;i++){
-    const c=text[i],n=text[i+1];
-    if(c=='"'&&q&&n=='"'){cell+='"';i++}
-    else if(c=='"'){q=!q}
-    else if(c==","&&!q){row.push(cell);cell=""}
-    else if((c=="\n"||c=="\r")&&!q){
-      if(c=="\r"&&n=="\n")i++;
-      row.push(cell);cell="";
-      if(row.some(x=>x!==""))rows.push(row);
-      row=[];
-    }else cell+=c;
-  }
-  if(cell||row.length){row.push(cell);if(row.some(x=>x!==""))rows.push(row)}
-  return rows;
+function gvizToRows(data){
+  if(!data||data.status==="error"||!data.table) throw new Error("Google Sheets response error");
+  const cols=(data.table.cols||[]).map(c=>c.label||c.id||"");
+  const body=(data.table.rows||[]).map(r=>(r.c||[]).map(c=>{
+    if(!c)return "";
+    if(c.f!=null)return String(c.f);
+    if(c.v==null)return "";
+    return String(c.v);
+  }));
+  return [cols,...body];
 }
-async function fetchSheet(name){
-  const r=await fetch(csvUrl(name),{cache:"no-store"});
-  if(!r.ok)throw new Error(name+" "+r.status);
-  return parseCSV(await r.text());
+function fetchSheet(name){
+  return new Promise((resolve,reject)=>{
+    const cb="__gs_"+Math.random().toString(36).slice(2);
+    const script=document.createElement("script");
+    const timer=setTimeout(()=>finish(new Error(name+" timed out")),12000);
+    function finish(err,data){
+      clearTimeout(timer);
+      try{delete window[cb]}catch(_){}
+      script.remove();
+      err?reject(err):resolve(data);
+    }
+    window[cb]=data=>{
+      try{finish(null,gvizToRows(data))}catch(e){finish(e)}
+    };
+    script.onerror=()=>finish(new Error(name+" could not be loaded"));
+    script.src=gvizUrl(name,cb);
+    document.head.appendChild(script);
+  });
 }
 function headerIndex(rows,test){return rows.findIndex(test)}
 function parseGroups(rows){
