@@ -1,5 +1,113 @@
 const SHEET_ID="1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI";
 const state={groups:[],schedule:[],results:[],standings:[]};
+const FALLBACK_SCHEDULE=`1|2026-11-02|09:00|G|Arman Kazemi|Duy Minh Do
+1|2026-11-02|10:00|C|Marek Kapička|Caner Kilic
+1|2026-11-02|11:00|A|Stephanie Ettmeier|Nazar Rudyi
+1|2026-11-02|12:00|E|Gayane Baghumyan|Shafin Shabir
+1|2026-11-02|13:00|F|Tomáš Pavela|Winnie Njoroge
+1|2026-11-02|16:00|B|Ctirad Slavik|Filip Galla
+1|2026-11-02|17:00|A|Stephanie Halamek|Morteza Nasiri
+1|2026-11-03|09:00|B|Jonas Tomkin|Filipa Osorio
+1|2026-11-03|10:00|F|Filip Matejka|Saba Khizanishvili
+1|2026-11-03|11:00|G|Maxi Guennewig|José Gómez
+1|2026-11-03|12:00|B|Davit Asatryan|Camilo Gomez
+1|2026-11-03|13:00|D|Michal Bauer|Farhang Shirkhani
+1|2026-11-03|16:00|C|František Ježek|Andrej Kameništiak
+1|2026-11-03|17:00|E|Filip Pertold|Matous Vodenka
+1|2026-11-04|09:00|D|Artur Tymoshenko|Filip Bobek
+1|2026-11-04|10:00|A|Shehzada G. Abbas|Jakub Šichta
+1|2026-11-04|11:00|E|Yaroslav Korobka|Tomas Haufer
+1|2026-11-04|12:00|D|David Mora|Martina Jakubův
+1|2026-11-04|13:00|G|Julie Chytilová|Václav Jeřábek
+1|2026-11-04|16:00|C|Michael Schulz|Ella Sargsyan
+1|2026-11-04|17:00|F|Tomáš Konečný|Jan Leher
+2|2026-11-09|09:00|F|Tomáš Pavela|Tomáš Konečný
+2|2026-11-09|10:00|G|José Gómez|Václav Jeřábek
+2|2026-11-09|11:00|B|Ctirad Slavik|Camilo Gomez
+2|2026-11-09|12:00|A|Shehzada G. Abbas|Stephanie Halamek
+2|2026-11-09|13:00|C|Michael Schulz|František Ježek
+2|2026-11-09|16:00|G|Maxi Guennewig|Duy Minh Do
+2|2026-11-09|17:00|E|Filip Pertold|Tomas Haufer
+2|2026-11-10|09:00|D|Farhang Shirkhani|Filip Bobek
+2|2026-11-10|10:00|C|Marek Kapička|Ella Sargsyan
+2|2026-11-10|11:00|F|Filip Matejka|Winnie Njoroge
+2|2026-11-10|12:00|C|Caner Kilic|Andrej Kameništiak
+2|2026-11-10|13:00|G|Arman Kazemi|Julie Chytilová
+2|2026-11-10|16:00|A|Nazar Rudyi|Morteza Nasiri
+2|2026-11-10|17:00|B|Davit Asatryan|Jonas Tomkin
+2|2026-11-11|09:00|F|Saba Khizanishvili|Jan Leher
+2|2026-11-11|10:00|E|Matous Vodenka|Shafin Shabir
+2|2026-11-11|11:00|E|Yaroslav Korobka|Gayane Baghumyan
+2|2026-11-11|12:00|D|David Mora|Artur Tymoshenko
+2|2026-11-11|13:00|B|Filip Galla|Filipa Osorio
+2|2026-11-11|16:00|D|Michal Bauer|Martina Jakubův
+2|2026-11-11|17:00|A|Stephanie Ettmeier|Jakub Šichta
+3|2026-11-16|09:00|D|Michal Bauer|Filip Bobek
+3|2026-11-16|10:00|C|Caner Kilic|Michael Schulz
+3|2026-11-16|11:00|E|Tomas Haufer|Gayane Baghumyan
+3|2026-11-16|12:00|C|Marek Kapička|Andrej Kameništiak
+3|2026-11-16|13:00|F|Winnie Njoroge|Tomáš Konečný
+3|2026-11-16|16:00|G|José Gómez|Arman Kazemi
+3|2026-11-16|17:00|D|Martina Jakubův|Artur Tymoshenko
+3|2026-11-18|09:00|E|Filip Pertold|Shafin Shabir
+3|2026-11-18|10:00|B|Ctirad Slavik|Filipa Osorio
+3|2026-11-18|11:00|C|Ella Sargsyan|František Ježek
+3|2026-11-18|12:00|G|Maxi Guennewig|Václav Jeřábek
+3|2026-11-18|13:00|D|Farhang Shirkhani|David Mora
+3|2026-11-18|16:00|A|Nazar Rudyi|Shehzada G. Abbas
+3|2026-11-18|17:00|A|Jakub Šichta|Stephanie Halamek
+3|2026-11-19|09:00|F|Filip Matejka|Jan Leher
+3|2026-11-19|10:00|E|Matous Vodenka|Yaroslav Korobka
+3|2026-11-19|11:00|A|Stephanie Ettmeier|Morteza Nasiri
+3|2026-11-19|12:00|B|Filip Galla|Davit Asatryan
+3|2026-11-19|13:00|B|Camilo Gomez|Jonas Tomkin
+3|2026-11-19|16:00|G|Duy Minh Do|Julie Chytilová
+3|2026-11-19|17:00|F|Saba Khizanishvili|Tomáš Pavela
+4|2026-11-23|09:00|D|Michal Bauer|Artur Tymoshenko
+4|2026-11-23|10:00|D|Martina Jakubův|Farhang Shirkhani
+4|2026-11-23|11:00|A|Stephanie Ettmeier|Stephanie Halamek
+4|2026-11-23|12:00|G|Duy Minh Do|José Gómez
+4|2026-11-23|13:00|F|Winnie Njoroge|Saba Khizanishvili
+4|2026-11-23|16:00|E|Tomas Haufer|Matous Vodenka
+4|2026-11-23|17:00|C|Andrej Kameništiak|Michael Schulz
+4|2026-11-24|09:00|C|Ella Sargsyan|Caner Kilic
+4|2026-11-24|10:00|G|Maxi Guennewig|Julie Chytilová
+4|2026-11-24|11:00|B|Camilo Gomez|Filip Galla
+4|2026-11-24|12:00|D|Filip Bobek|David Mora
+4|2026-11-24|13:00|C|Marek Kapička|František Ježek
+4|2026-11-24|16:00|E|Shafin Shabir|Yaroslav Korobka
+4|2026-11-24|17:00|F|Jan Leher|Tomáš Pavela
+4|2026-11-25|09:00|B|Ctirad Slavik|Jonas Tomkin
+4|2026-11-25|10:00|B|Filipa Osorio|Davit Asatryan
+4|2026-11-25|11:00|A|Morteza Nasiri|Shehzada G. Abbas
+4|2026-11-25|12:00|G|Václav Jeřábek|Arman Kazemi
+4|2026-11-25|13:00|E|Filip Pertold|Gayane Baghumyan
+4|2026-11-25|16:00|F|Filip Matejka|Tomáš Konečný
+4|2026-11-25|17:00|A|Jakub Šichta|Nazar Rudyi
+5|2026-11-30|09:00|C|Marek Kapička|Michael Schulz
+5|2026-11-30|10:00|E|Shafin Shabir|Tomas Haufer
+5|2026-11-30|11:00|C|František Ježek|Caner Kilic
+5|2026-11-30|12:00|E|Filip Pertold|Yaroslav Korobka
+5|2026-11-30|13:00|D|Artur Tymoshenko|Farhang Shirkhani
+5|2026-11-30|16:00|D|Michal Bauer|David Mora
+5|2026-11-30|17:00|D|Filip Bobek|Martina Jakubův
+5|2026-12-01|09:00|A|Stephanie Halamek|Nazar Rudyi
+5|2026-12-01|10:00|A|Morteza Nasiri|Jakub Šichta
+5|2026-12-01|11:00|B|Filipa Osorio|Camilo Gomez
+5|2026-12-01|12:00|B|Jonas Tomkin|Filip Galla
+5|2026-12-01|13:00|A|Stephanie Ettmeier|Shehzada G. Abbas
+5|2026-12-01|16:00|E|Gayane Baghumyan|Matous Vodenka
+5|2026-12-01|17:00|F|Filip Matejka|Tomáš Pavela
+5|2026-12-02|09:00|G|Václav Jeřábek|Duy Minh Do
+5|2026-12-02|10:00|F|Jan Leher|Winnie Njoroge
+5|2026-12-02|11:00|F|Tomáš Konečný|Saba Khizanishvili
+5|2026-12-02|12:00|G|Julie Chytilová|José Gómez
+5|2026-12-02|13:00|G|Maxi Guennewig|Arman Kazemi
+5|2026-12-02|16:00|C|Andrej Kameništiak|Ella Sargsyan
+5|2026-12-02|17:00|B|Ctirad Slavik|Davit Asatryan`.trim().split("\n").map(line=>{
+  const [week,date,time,group,p1,p2]=line.split("|");
+  return {week:Number(week),date,time,group,p1,p2};
+});
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -132,15 +240,25 @@ async function refreshData(){
   }
 
   if(loaded["Groups"]) state.groups=parseGroups(loaded["Groups"]);
+  let scheduleFallbackUsed=false;
   if(loaded["Schedule"]) state.schedule=parseSchedule(loaded["Schedule"]);
+  if(!state.schedule.length){
+    state.schedule=FALLBACK_SCHEDULE;
+    scheduleFallbackUsed=true;
+  }
   if(loaded["Results recording"]) state.results=parseResults(loaded["Results recording"]);
   if(loaded["Standing"]) state.standings=parseStandings(loaded["Standing"]);
 
   const coreOk=state.groups.length>0 && state.schedule.length>0;
-  if(coreOk && errors.length===0){
+  if(coreOk && errors.length===0 && !scheduleFallbackUsed){
     status.textContent="Live data connected";
     status.className="status-pill live";
     status.title="Groups "+state.groups.length+" • Schedule "+state.schedule.length+" • Results "+state.results.length+" • Standings "+state.standings.length;
+  }else if(coreOk && scheduleFallbackUsed && errors.length===0){
+    status.textContent="Live data connected • schedule cached";
+    status.className="status-pill live";
+    status.title="Groups live • Schedule cached from audited tournament workbook • Results/standings live when available";
+    if(errBox){errBox.style.display="none";errBox.textContent="";}
   }else if(coreOk){
     status.textContent="Live data partially connected";
     status.className="status-pill fallback";
