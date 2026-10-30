@@ -244,13 +244,64 @@ function parseResults(rows){
   const h=headerIndex(rows,r=>norm(r[0]).toLowerCase()=="week"&&norm(r[11]).toLowerCase()=="winner");
   if(h<0)return[];
   return rows.slice(h+1).filter(r=>norm(r[4])&&norm(r[5])&&norm(r[11]))
-    .map(r=>({date:norm(r[1]),group:norm(r[3]),p1:norm(r[4]),p2:norm(r[5]),winner:norm(r[11]),setScore:norm(r[12]),forfeit:norm(r[13])}));
+    .map(r=>({
+      date:norm(r[1]),
+      group:norm(r[3]),
+      p1:norm(r[4]),
+      p2:norm(r[5]),
+      scores:[6,7,8,9,10].map(i=>norm(r[i])).filter(Boolean),
+      winner:norm(r[11]),
+      setScore:norm(r[12]),
+      forfeit:norm(r[13]).toUpperCase()
+    }));
 }
 function parseStandings(rows){
   const h=headerIndex(rows,r=>norm(r[0]).toLowerCase()=="group"&&norm(r[1]).toLowerCase()=="player"&&norm(r[2]).toLowerCase()=="wins");
   if(h<0)return[];
   return rows.slice(h+1).filter(r=>/^[A-G]$/.test(norm(r[0]))&&norm(r[1]))
     .map(r=>({group:norm(r[0]),player:norm(r[1]),wins:num(r[2]),losses:num(r[3]),matches:num(r[7]),winRate:r[8]===""?"":num(r[8]),setRatio:r[10]===""?"":num(r[10]),pointDiff:r[11]===""?"":num(r[11])}));
+}
+function scorePair(s){
+  const m=norm(s).match(/^(\d+)\s*[-–:]\s*(\d+)$/);
+  return m?[Number(m[1]),Number(m[2])]:null;
+}
+function deriveStandings(){
+  const byPlayer=new Map(
+    state.groups.map(p=>[p.player,{
+      group:p.group,player:p.player,wins:0,losses:0,matches:0,
+      setsWon:0,setsLost:0,pointsFor:0,pointsAgainst:0,
+      winRate:0,setRatio:0,pointDiff:-999
+    }])
+  );
+
+  for(const r of state.results){
+    const a=byPlayer.get(r.p1),b=byPlayer.get(r.p2);
+    if(!a||!b)continue;
+
+    a.matches++;b.matches++;
+    if(r.winner===r.p1){a.wins++;b.losses++}
+    else if(r.winner===r.p2){b.wins++;a.losses++}
+
+    if(r.forfeit!=="Y"){
+      for(const raw of r.scores||[]){
+        const pair=scorePair(raw);
+        if(!pair)continue;
+        const [x,y]=pair;
+        a.pointsFor+=x;a.pointsAgainst+=y;
+        b.pointsFor+=y;b.pointsAgainst+=x;
+        if(x>y){a.setsWon++;b.setsLost++}
+        else if(y>x){b.setsWon++;a.setsLost++}
+      }
+    }
+  }
+
+  for(const x of byPlayer.values()){
+    x.winRate=x.matches?x.wins/x.matches:0;
+    const totalSets=x.setsWon+x.setsLost;
+    x.setRatio=totalSets?x.setsWon/totalSets:0;
+    x.pointDiff=(x.pointsFor||x.pointsAgainst)?x.pointsFor-x.pointsAgainst:-999;
+  }
+  return [...byPlayer.values()];
 }
 function compareRank(a,b){
   return b.wins-a.wins||b.winRate-a.winRate||b.setRatio-a.setRatio||b.pointDiff-a.pointDiff||a.player.localeCompare(b.player);
@@ -295,7 +346,8 @@ async function refreshData(){
     scheduleFallbackUsed=true;
   }
   if(loaded["Results recording"]) state.results=parseResults(loaded["Results recording"]);
-  if(loaded["Standing"]) state.standings=parseStandings(loaded["Standing"]);
+  const sheetStandings=loaded["Standing"]?parseStandings(loaded["Standing"]):[];
+  state.standings=state.groups.length?deriveStandings():sheetStandings;
 
   const coreOk=state.groups.length>0 && state.schedule.length>0;
   if(coreOk && errors.length===0 && !scheduleFallbackUsed){
