@@ -1,12 +1,12 @@
 const SHEET_ID="1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI";
 const state={groups:[],schedule:[],results:[],standings:[]};
-const FALLBACK_SCHEDULE=`1|2026-11-04|09:00|G|Arman Kazemi|Duy Minh Do
-1|2026-11-04|10:00|C|Marek Kapička|Caner Kilic
-1|2026-11-04|11:00|A|Stephanie Ettmeier|Nazar Rudyi
-1|2026-11-04|12:00|E|Gayane Baghumyan|Shafin Shabir
-1|2026-11-04|13:00|F|Tomáš Pavela|Winnie Njoroge
-1|2026-11-04|16:00|B|Ctirad Slavik|Filip Galla
-1|2026-11-04|17:00|A|Stephanie Halamek|Morteza Nasiri
+const FALLBACK_SCHEDULE=`1|2026-11-03|09:00|G|Arman Kazemi|Duy Minh Do
+1|2026-11-03|10:00|C|Marek Kapička|Caner Kilic
+1|2026-11-03|11:00|A|Stephanie Ettmeier|Nazar Rudyi
+1|2026-11-03|12:00|E|Gayane Baghumyan|Shafin Shabir
+1|2026-11-03|13:00|F|Tomáš Pavela|Winnie Njoroge
+1|2026-11-03|16:00|B|Ctirad Slavik|Filip Galla
+1|2026-11-03|17:00|A|Stephanie Halamek|Morteza Nasiri
 1|2026-11-04|09:00|B|Jonas Tomkin|Filipa Osorio
 1|2026-11-04|10:00|F|Filip Matejka|Saba Khizanishvili
 1|2026-11-04|11:00|G|Maxi Guennewig|José Gómez
@@ -299,16 +299,16 @@ async function refreshData(){
 
   const coreOk=state.groups.length>0 && state.schedule.length>0;
   if(coreOk && errors.length===0 && !scheduleFallbackUsed){
-    status.textContent="Live data • schedule live";
+    status.textContent="Live updates";
     status.className="status-pill live";
     status.title="Groups "+state.groups.length+" • Schedule "+state.schedule.length+" • Results "+state.results.length+" • Standings "+state.standings.length;
   }else if(coreOk && scheduleFallbackUsed && errors.length===0){
-    status.textContent="Live data • schedule cached";
+    status.textContent="Live updates";
     status.className="status-pill live";
     status.title="Groups live • Schedule cached from audited tournament workbook • Results/standings live when available";
     if(errBox){errBox.style.display="none";errBox.textContent="";}
   }else if(coreOk){
-    status.textContent="Live data partial";
+    status.textContent="Live updates limited";
     status.className="status-pill fallback";
     status.title=errors.join("\n");
     if(errBox){errBox.style.display="block";errBox.textContent=errors.join(" | ");}
