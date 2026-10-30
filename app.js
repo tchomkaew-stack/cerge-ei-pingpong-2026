@@ -85,7 +85,9 @@ function matchCard(m){return `<div class="match-card"><div class="match-meta">We
 
 async function refreshData(){
   const status=$("liveStatus");
+  const errBox=$("liveError");
   status.textContent="Connecting to live sheet…";status.className="status-pill";
+  if(errBox){errBox.style.display="none";errBox.textContent="";}
 
   const names=["Groups","Schedule","Results recording","Standing"];
   const loaded={};
@@ -110,10 +112,12 @@ async function refreshData(){
     status.textContent="Live data partially connected";
     status.className="status-pill fallback";
     status.title=errors.join("\n");
+    if(errBox){errBox.style.display="block";errBox.textContent=errors.join(" | ");}
   }else{
     status.textContent="Live data unavailable";
     status.className="status-pill fallback";
     status.title=(errors.length?errors.join("\n"):"Parsed Groups "+state.groups.length+", Schedule "+state.schedule.length);
+    if(errBox){errBox.style.display="block";errBox.textContent=(errors.length?errors.join(" | "):"Parsed Groups "+state.groups.length+", Schedule "+state.schedule.length);}
     console.error("Live data diagnostics:",errors,{groups:state.groups.length,schedule:state.schedule.length,results:state.results.length,standings:state.standings.length});
   }
   renderAll();
