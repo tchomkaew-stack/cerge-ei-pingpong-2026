@@ -3,19 +3,26 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Official CERGE-EI Ping Pong League 2026 tournament hub: schedule, standings, groups, results and rules.">
+  <meta name="description" content="CERGE-EI Ping Pong League 2026 tournament hub: schedule, standings, groups, results and rules.">
   <title>CERGE-EI Ping Pong League 2026</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <header class="hero">
+  <div class="hero-court" aria-hidden="true"></div>
   <div class="hero-inner">
-    <div>
-      <div class="eyebrow">CERGE-EI • FALL 2026</div>
-      <h1>Ping Pong League 2026</h1>
-      <p class="tagline">Season 2 • 42 players • 7 groups • 16-player knockout</p>
+    <div class="hero-copy">
+      <div class="hero-kicker">CERGE-EI • FALL 2026</div>
+      <div class="hero-title-row">
+        <h1><span>PING PONG</span><strong>LEAGUE 2026</strong></h1>
+        <span class="season-chip">SEASON 2</span>
+      </div>
+      <p class="tagline">42 players · 7 groups · 16-player knockout</p>
     </div>
-    <div class="hero-badge">🏓</div>
+    <div class="hero-mark" aria-hidden="true">
+      <span class="paddle"></span>
+      <span class="ball"></span>
+    </div>
   </div>
 </header>
 
@@ -30,18 +37,34 @@
 <main>
   <section id="home" class="view active">
     <div class="status-row">
-      <span id="liveStatus" class="status-pill">Connecting to live sheet…</span><div id="liveError" style="width:100%;font-size:.82rem;color:#9b1c1c;margin-top:6px;display:none"></div>
-      <button id="refreshBtn" class="secondary-btn" type="button">Refresh data</button>
+      <div class="live-cluster">
+        <span id="liveStatus" class="status-pill">Connecting…</span>
+        <div id="liveError" class="live-error"></div>
+      </div>
+      <button id="refreshBtn" class="secondary-btn" type="button">Refresh</button>
     </div>
 
-    <div class="stat-grid">
+    <section class="panel player-finder">
+      <div class="finder-copy">
+        <span class="section-label">PLAYER QUICK ACCESS</span>
+        <h2>Find your matches</h2>
+        <p>Search your name to see your full group-stage schedule instantly.</p>
+      </div>
+      <div class="search-shell">
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <input id="homePlayerSearch" class="search search-hero" type="search" placeholder="Search player name…">
+      </div>
+      <div id="myMatches" class="match-list"></div>
+    </section>
+
+    <div class="stat-grid compact-stats">
       <article class="stat-card"><span>Players</span><strong>42</strong></article>
       <article class="stat-card"><span>Groups</span><strong>7</strong></article>
-      <article class="stat-card"><span>Group matches</span><strong>105</strong></article>
-      <article class="stat-card"><span>Knockout spots</span><strong>16</strong></article>
+      <article class="stat-card"><span>Matches</span><strong>105</strong></article>
+      <article class="stat-card"><span>Knockout</span><strong>16</strong></article>
     </div>
 
-    <div class="two-col">
+    <div class="two-col home-columns">
       <section class="panel">
         <h2>Next matches</h2>
         <div id="nextMatches" class="stack"></div>
@@ -52,20 +75,12 @@
       </section>
     </div>
 
-    <section class="panel">
-      <div class="section-heading">
-        <div>
-          <h2>Find my matches</h2>
-          <p>Search your name to see only your group-stage schedule.</p>
-        </div>
+    <section class="panel qualification-strip">
+      <div>
+        <span class="section-label">QUALIFICATION</span>
+        <h2>14 automatic + 2 wild cards</h2>
       </div>
-      <input id="homePlayerSearch" class="search" type="search" placeholder="Type a player name…">
-      <div id="myMatches" class="match-list"></div>
-    </section>
-
-    <section class="panel accent-panel">
-      <h2>How qualification works</h2>
-      <p><strong>Top 2 eligible players from each group</strong> qualify automatically (14 players). The <strong>2 best eligible third-place finishers</strong> across all seven groups take the two wild-card spots, creating a 16-player Round of 16.</p>
+      <p><strong>Top 2 eligible players from each group</strong> qualify automatically. The <strong>2 best eligible third-place finishers</strong> complete the Round of 16.</p>
     </section>
   </section>
 
