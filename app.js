@@ -25,12 +25,18 @@ function parseCSV(text){
   return rows;
 }
 async function fetchSheet(name){
-  const r=await fetch("/api/sheet?sheet="+encodeURIComponent(name),{cache:"no-store"});
+  const url="/api/sheet?sheet="+encodeURIComponent(name);
+  const r=await fetch(url,{cache:"no-store"});
+  const text=await r.text();
   if(!r.ok){
-    const detail=await r.text().catch(()=>"");
-    throw new Error(name+" "+r.status+" "+detail);
+    throw new Error(name+": HTTP "+r.status+(text?(" — "+text.slice(0,160)):""));
   }
-  return parseCSV(await r.text());
+  if(text.trim().startsWith("<")){
+    throw new Error(name+": API returned HTML instead of CSV");
+  }
+  const rows=parseCSV(text);
+  if(!rows.length) throw new Error(name+": empty response");
+  return rows;
 }
 function headerIndex(rows,test){return rows.findIndex(test)}
 function parseGroups(rows){
@@ -80,18 +86,38 @@ function matchCard(m){return `<div class="match-card"><div class="match-meta">We
 async function refreshData(){
   const status=$("liveStatus");
   status.textContent="Connecting to live sheet…";status.className="status-pill";
-  try{
-    const [g,s,r,st]=await Promise.all(["Groups","Schedule","Results recording","Standing"].map(fetchSheet));
-    state.groups=parseGroups(g);state.schedule=parseSchedule(s);state.results=parseResults(r);state.standings=parseStandings(st);
-    if(state.groups.length!==42||state.schedule.length!==105)throw new Error("Unexpected sheet structure");
-    status.textContent="Live data connected";status.className="status-pill live";
-  }catch(e){
-    console.error(e);
-    status.textContent="Live data temporarily unavailable";status.className="status-pill fallback";
+
+  const names=["Groups","Schedule","Results recording","Standing"];
+  const loaded={};
+  const errors=[];
+
+  for(const name of names){
+    try{ loaded[name]=await fetchSheet(name); }
+    catch(e){ errors.push(e.message||String(e)); }
+  }
+
+  if(loaded["Groups"]) state.groups=parseGroups(loaded["Groups"]);
+  if(loaded["Schedule"]) state.schedule=parseSchedule(loaded["Schedule"]);
+  if(loaded["Results recording"]) state.results=parseResults(loaded["Results recording"]);
+  if(loaded["Standing"]) state.standings=parseStandings(loaded["Standing"]);
+
+  const coreOk=state.groups.length>0 && state.schedule.length>0;
+  if(coreOk && errors.length===0){
+    status.textContent="Live data connected";
+    status.className="status-pill live";
+    status.title="Groups "+state.groups.length+" • Schedule "+state.schedule.length+" • Results "+state.results.length+" • Standings "+state.standings.length;
+  }else if(coreOk){
+    status.textContent="Live data partially connected";
+    status.className="status-pill fallback";
+    status.title=errors.join("\n");
+  }else{
+    status.textContent="Live data unavailable";
+    status.className="status-pill fallback";
+    status.title=(errors.length?errors.join("\n"):"Parsed Groups "+state.groups.length+", Schedule "+state.schedule.length);
+    console.error("Live data diagnostics:",errors,{groups:state.groups.length,schedule:state.schedule.length,results:state.results.length,standings:state.standings.length});
   }
   renderAll();
 }
-
 function renderHome(){
   const done=new Set(state.results.map(r=>pairKey(r.group,r.p1,r.p2)));
   const next=state.schedule.filter(m=>!done.has(pairKey(m.group,m.p1,m.p2))).slice(0,6);
