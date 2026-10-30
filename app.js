@@ -155,6 +155,24 @@ function parseGroups(rows){
 }
 function parseSchedule(rows){
   const clean=s=>norm(s).toLowerCase().replace(/\s+/g," ").trim();
+  const normalizeGroup=s=>{
+    const m=norm(s).match(/^(?:group\s*)?([A-G])$/i);
+    return m?m[1].toUpperCase():"";
+  };
+  const normalizeWeek=s=>{
+    const m=norm(s).match(/^(?:week\s*)?([1-5])$/i);
+    return m?Number(m[1]):0;
+  };
+  const looksDate=s=>{
+    const v=norm(s);
+    return /2026/.test(v) || /^\d{1,2}[.\/-]\d{1,2}[.\/-](?:26|2026)$/.test(v);
+  };
+  const looksTime=s=>{
+    const v=norm(s);
+    return /^\d{1,2}:\d{2}(?::\d{2})?\s*(?:am|pm)?$/i.test(v);
+  };
+
+  // First try normal header-based parsing.
   const h=rows.findIndex(r=>{
     const vals=r.map(clean);
     return vals.includes("week") &&
@@ -162,35 +180,50 @@ function parseSchedule(rows){
            vals.some(v=>v==="player 1"||v==="player1") &&
            vals.some(v=>v==="player 2"||v==="player2");
   });
-  if(h<0){
-    console.error("Schedule header not found. First rows:",rows.slice(0,8));
-    return[];
-  }
 
-  const hdr=rows[h].map(clean);
-  const ix={
-    week:hdr.indexOf("week"),
-    date:hdr.findIndex(v=>v==="date"||v.includes("date")),
-    time:hdr.findIndex(v=>v==="time"||v.includes("time")),
-    group:hdr.indexOf("group"),
-    p1:hdr.findIndex(v=>v==="player 1"||v==="player1"),
-    p2:hdr.findIndex(v=>v==="player 2"||v==="player2")
-  };
-
-  if(ix.date<0) ix.date=ix.week+1;
-  if(ix.time<0) ix.time=ix.week+2;
-
-  return rows.slice(h+1)
-    .filter(r=>norm(r[ix.week]) && norm(r[ix.group]) && norm(r[ix.p1]) && norm(r[ix.p2]))
-    .map(r=>({
-      week:parseInt(norm(r[ix.week]).replace(/\D/g,""))||0,
-      date:norm(r[ix.date]),
-      time:norm(r[ix.time]),
-      group:norm(r[ix.group]).replace(/^group\s+/i,"").trim(),
+  if(h>=0){
+    const hdr=rows[h].map(clean);
+    const ix={
+      week:hdr.indexOf("week"),
+      date:hdr.findIndex(v=>v==="date"||v.includes("date")),
+      time:hdr.findIndex(v=>v==="time"||v.includes("time")),
+      group:hdr.indexOf("group"),
+      p1:hdr.findIndex(v=>v==="player 1"||v==="player1"),
+      p2:hdr.findIndex(v=>v==="player 2"||v==="player2")
+    };
+    const parsed=rows.slice(h+1).map(r=>({
+      week:normalizeWeek(r[ix.week]),
+      date:ix.date>=0?norm(r[ix.date]):"",
+      time:ix.time>=0?norm(r[ix.time]):"",
+      group:normalizeGroup(r[ix.group]),
       p1:norm(r[ix.p1]),
       p2:norm(r[ix.p2])
-    }))
-    .filter(m=>m.week>0 && /^[A-G]$/i.test(m.group));
+    })).filter(m=>m.week&&m.group&&m.p1&&m.p2);
+    if(parsed.length) return parsed;
+  }
+
+  // Fallback: infer each match row from values rather than fixed columns.
+  // This survives extra title columns / shifted columns introduced by Google Sheets.
+  const playerNames=new Set(state.groups.map(x=>x.player));
+  const inferred=[];
+  for(const r of rows){
+    const cells=r.map(norm);
+    if(!cells.some(Boolean)) continue;
+
+    let group="",week=0,date="",time="";
+    for(const c of cells){
+      if(!group) group=normalizeGroup(c);
+      if(!week) week=normalizeWeek(c);
+      if(!date && looksDate(c)) date=c;
+      if(!time && looksTime(c)) time=c;
+    }
+
+    const players=cells.filter(c=>playerNames.has(c));
+    if(group && week && players.length>=2){
+      inferred.push({week,date,time,group,p1:players[0],p2:players[1]});
+    }
+  }
+  return inferred;
 }
 function parseResults(rows){
   const h=headerIndex(rows,r=>norm(r[0]).toLowerCase()=="week"&&norm(r[11]).toLowerCase()=="winner");
