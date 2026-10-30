@@ -1,26 +1,26 @@
 const SHEET_ID="1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI";
 const state={groups:[],schedule:[],results:[],standings:[]};
-const FALLBACK_SCHEDULE=`1|2026-11-02|09:00|G|Arman Kazemi|Duy Minh Do
-1|2026-11-02|10:00|C|Marek Kapička|Caner Kilic
-1|2026-11-02|11:00|A|Stephanie Ettmeier|Nazar Rudyi
-1|2026-11-02|12:00|E|Gayane Baghumyan|Shafin Shabir
-1|2026-11-02|13:00|F|Tomáš Pavela|Winnie Njoroge
-1|2026-11-02|16:00|B|Ctirad Slavik|Filip Galla
-1|2026-11-02|17:00|A|Stephanie Halamek|Morteza Nasiri
-1|2026-11-03|09:00|B|Jonas Tomkin|Filipa Osorio
-1|2026-11-03|10:00|F|Filip Matejka|Saba Khizanishvili
-1|2026-11-03|11:00|G|Maxi Guennewig|José Gómez
-1|2026-11-03|12:00|B|Davit Asatryan|Camilo Gomez
-1|2026-11-03|13:00|D|Michal Bauer|Farhang Shirkhani
-1|2026-11-03|16:00|C|František Ježek|Andrej Kameništiak
-1|2026-11-03|17:00|E|Filip Pertold|Matous Vodenka
-1|2026-11-04|09:00|D|Artur Tymoshenko|Filip Bobek
-1|2026-11-04|10:00|A|Shehzada G. Abbas|Jakub Šichta
-1|2026-11-04|11:00|E|Yaroslav Korobka|Tomas Haufer
-1|2026-11-04|12:00|D|David Mora|Martina Jakubův
-1|2026-11-04|13:00|G|Julie Chytilová|Václav Jeřábek
-1|2026-11-04|16:00|C|Michael Schulz|Ella Sargsyan
-1|2026-11-04|17:00|F|Tomáš Konečný|Jan Leher
+const FALLBACK_SCHEDULE=`1|2026-11-04|09:00|G|Arman Kazemi|Duy Minh Do
+1|2026-11-04|10:00|C|Marek Kapička|Caner Kilic
+1|2026-11-04|11:00|A|Stephanie Ettmeier|Nazar Rudyi
+1|2026-11-04|12:00|E|Gayane Baghumyan|Shafin Shabir
+1|2026-11-04|13:00|F|Tomáš Pavela|Winnie Njoroge
+1|2026-11-04|16:00|B|Ctirad Slavik|Filip Galla
+1|2026-11-04|17:00|A|Stephanie Halamek|Morteza Nasiri
+1|2026-11-04|09:00|B|Jonas Tomkin|Filipa Osorio
+1|2026-11-04|10:00|F|Filip Matejka|Saba Khizanishvili
+1|2026-11-04|11:00|G|Maxi Guennewig|José Gómez
+1|2026-11-04|12:00|B|Davit Asatryan|Camilo Gomez
+1|2026-11-04|13:00|D|Michal Bauer|Farhang Shirkhani
+1|2026-11-04|16:00|C|František Ježek|Andrej Kameništiak
+1|2026-11-04|17:00|E|Filip Pertold|Matous Vodenka
+1|2026-11-05|09:00|D|Artur Tymoshenko|Filip Bobek
+1|2026-11-05|10:00|A|Shehzada G. Abbas|Jakub Šichta
+1|2026-11-05|11:00|E|Yaroslav Korobka|Tomas Haufer
+1|2026-11-05|12:00|D|David Mora|Martina Jakubův
+1|2026-11-05|13:00|G|Julie Chytilová|Václav Jeřábek
+1|2026-11-05|16:00|C|Michael Schulz|Ella Sargsyan
+1|2026-11-05|17:00|F|Tomáš Konečný|Jan Leher
 2|2026-11-09|09:00|F|Tomáš Pavela|Tomáš Konečný
 2|2026-11-09|10:00|G|José Gómez|Václav Jeřábek
 2|2026-11-09|11:00|B|Ctirad Slavik|Camilo Gomez
@@ -192,7 +192,7 @@ function parseSchedule(rows){
   const weekFromDate=iso=>{
     if(!iso)return 0;
     const md=iso.slice(5);
-    if(["11-02","11-03","11-04"].includes(md))return 1;
+    if(["11-03","11-04","11-05"].includes(md))return 1;
     if(["11-09","11-10","11-11"].includes(md))return 2;
     if(["11-16","11-18","11-19"].includes(md))return 3;
     if(["11-23","11-24","11-25"].includes(md))return 4;
@@ -358,7 +358,59 @@ function renderStandings(){
   const q=[];for(const g of "ABCDEFG"){if(e[g]?.[0])q.push([g+"1",e[g][0].player]);if(e[g]?.[1])q.push([g+"2",e[g][1].player])}if(wc[0])q.push(["WC1",wc[0].player]);if(wc[1])q.push(["WC2",wc[1].player]);
   $("qualifiers").innerHTML=`<div class="qual-list">${q.map(([s,p])=>`<div class="qual-item"><strong>${s}</strong> • ${esc(p)}</div>`).join("")}</div>`;
 }
-function renderAll(){renderHome();renderSchedule();renderGroups();renderStandings()}
+
+function renderChallenges(){
+  const cards=[
+    {
+      tag:"PERFECT GROUP STAGE",
+      name:"Ctirad Slavik",
+      stat:"6–0 · 100%",
+      text:"Ctirad went unbeaten in last year’s group stage — and did not drop a single game (12–0). Who will be the first to take one this season?"
+    },
+    {
+      tag:"UNBEATEN RETURNER",
+      name:"Arman Kazemi",
+      stat:"6–0 · +89",
+      text:"Arman also finished last year’s group stage undefeated, with the biggest point differential among this year’s returning players. Can Group G stop the streak?"
+    },
+    {
+      tag:"PERFECT RETURNER",
+      name:"Michael Schulz",
+      stat:"6–0 · 100%",
+      text:"Michael swept all six group-stage matches last season and returns in Group C. Who will hand him his first group-stage loss?"
+    },
+    {
+      tag:"PERFECT RETURNER",
+      name:"Yaroslav Korobka",
+      stat:"6–0 · 100%",
+      text:"Yaroslav completed another perfect 6–0 group stage last year. This season, Group E gets the challenge."
+    },
+    {
+      tag:"STRONG RETURNER",
+      name:"Filip Matejka",
+      stat:"5–1 · 83%",
+      text:"Filip won five of six group-stage matches last year and posted a +80 point differential — one of the strongest returning records."
+    },
+    {
+      tag:"WELCOME BACK",
+      name:"19 returning players",
+      stat:"45% return",
+      text:"Almost half of this year’s field also played in 2025 — a nice sign that people wanted another season."
+    }
+  ];
+  const el=$("challengeGrid");
+  if(!el)return;
+  el.innerHTML=cards.map((c,i)=>`<article class="challenge-card ${i<4?"challenge-featured":""}">
+    <div class="challenge-top">
+      <span class="challenge-tag">${esc(c.tag)}</span>
+      <strong class="challenge-stat">${esc(c.stat)}</strong>
+    </div>
+    <h3>${esc(c.name)}</h3>
+    <p>${esc(c.text)}</p>
+  </article>`).join("");
+}
+
+function renderAll(){renderHome();renderSchedule();renderGroups();renderStandings();renderChallenges()}
 
 document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
   document.querySelectorAll(".tab,.view").forEach(x=>x.classList.remove("active"));
