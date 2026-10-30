@@ -222,7 +222,7 @@ function fmtDate(s){
   return s;
 }
 function pairKey(g,a,b){return g+":"+[a,b].sort().join("|")}
-function matchCard(m){return `<div class="match-card"><div class="match-meta">Week ${m.week} • ${esc(fmtDate(m.date))} • ${esc(m.time)} • Group ${m.group}</div><div class="match-main">${esc(m.p1)} <b>vs</b> ${esc(m.p2)}</div></div>`}
+function matchCard(m){return `<div class="match-card"><div class="match-meta">${esc(fmtDate(m.date))} • ${esc(m.time)} • Group ${m.group} • Week ${m.week}</div><div class="match-main"><span>${esc(m.p1)}</span><b>vs</b><span>${esc(m.p2)}</span></div></div>`}
 
 async function refreshData(){
   const status=$("liveStatus");
@@ -251,16 +251,16 @@ async function refreshData(){
 
   const coreOk=state.groups.length>0 && state.schedule.length>0;
   if(coreOk && errors.length===0 && !scheduleFallbackUsed){
-    status.textContent="Live data connected";
+    status.textContent="Live standings";
     status.className="status-pill live";
     status.title="Groups "+state.groups.length+" • Schedule "+state.schedule.length+" • Results "+state.results.length+" • Standings "+state.standings.length;
   }else if(coreOk && scheduleFallbackUsed && errors.length===0){
-    status.textContent="Live data connected • schedule cached";
+    status.textContent="Live standings";
     status.className="status-pill live";
     status.title="Groups live • Schedule cached from audited tournament workbook • Results/standings live when available";
     if(errBox){errBox.style.display="none";errBox.textContent="";}
   }else if(coreOk){
-    status.textContent="Live data partially connected";
+    status.textContent="Live data partial";
     status.className="status-pill fallback";
     status.title=errors.join("\n");
     if(errBox){errBox.style.display="block";errBox.textContent=errors.join(" | ");}
