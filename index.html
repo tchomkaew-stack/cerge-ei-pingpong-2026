@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Official CERGE-EI Ping Pong League 2026 tournament hub: schedule, standings, groups, results and rules.">
+  <title>CERGE-EI Ping Pong League 2026</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="eyebrow">CERGE-EI • FALL 2026</div>
+      <h1>Ping Pong League 2026</h1>
+      <p class="tagline">Season 2 • 42 players • 7 groups • 16-player knockout</p>
+    </div>
+    <div class="hero-badge">🏓</div>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Tournament navigation">
+  <button class="tab active" data-view="home">Home</button>
+  <button class="tab" data-view="schedule">Schedule</button>
+  <button class="tab" data-view="standings">Standings</button>
+  <button class="tab" data-view="groups">Groups</button>
+  <button class="tab" data-view="rules">Rules</button>
+</nav>
+
+<main>
+  <section id="home" class="view active">
+    <div class="status-row">
+      <span id="liveStatus" class="status-pill">Connecting to live sheet…</span>
+      <button id="refreshBtn" class="secondary-btn" type="button">Refresh data</button>
+    </div>
+
+    <div class="stat-grid">
+      <article class="stat-card"><span>Players</span><strong>42</strong></article>
+      <article class="stat-card"><span>Groups</span><strong>7</strong></article>
+      <article class="stat-card"><span>Group matches</span><strong>105</strong></article>
+      <article class="stat-card"><span>Knockout spots</span><strong>16</strong></article>
+    </div>
+
+    <div class="two-col">
+      <section class="panel">
+        <h2>Next matches</h2>
+        <div id="nextMatches" class="stack"></div>
+      </section>
+      <section class="panel">
+        <h2>Latest results</h2>
+        <div id="latestResults" class="stack muted-empty">No results recorded yet.</div>
+      </section>
+    </div>
+
+    <section class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Find my matches</h2>
+          <p>Search your name to see only your group-stage schedule.</p>
+        </div>
+      </div>
+      <input id="homePlayerSearch" class="search" type="search" placeholder="Type a player name…">
+      <div id="myMatches" class="match-list"></div>
+    </section>
+
+    <section class="panel accent-panel">
+      <h2>How qualification works</h2>
+      <p><strong>Top 2 eligible players from each group</strong> qualify automatically (14 players). The <strong>2 best eligible third-place finishers</strong> across all seven groups take the two wild-card spots, creating a 16-player Round of 16.</p>
+    </section>
+  </section>
+
+  <section id="schedule" class="view">
+    <section class="panel">
+      <div class="section-heading">
+        <div><h2>Group-stage schedule</h2><p>Predated default times. Players may reschedule by mutual agreement.</p></div>
+      </div>
+      <div class="filters">
+        <input id="scheduleSearch" class="search" type="search" placeholder="Search player…">
+        <select id="groupFilter" aria-label="Filter by group">
+          <option value="">All groups</option>
+          <option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option>
+        </select>
+        <select id="weekFilter" aria-label="Filter by week">
+          <option value="">All weeks</option>
+          <option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option><option value="4">Week 4</option><option value="5">Week 5</option>
+        </select>
+      </div>
+      <div id="scheduleTableWrap"></div>
+    </section>
+  </section>
+
+  <section id="standings" class="view">
+    <section class="panel">
+      <div class="section-heading">
+        <div><h2>Live standings</h2><p>Calculated from recorded results. Minimum 3 completed matches required for knockout eligibility.</p></div>
+      </div>
+      <div id="standingsGrid" class="standings-grid"></div>
+    </section>
+
+    <div class="two-col">
+      <section class="panel">
+        <h2>Best third-place race</h2>
+        <p class="small-note">The top two eligible third-place finishers receive wild cards.</p>
+        <div id="wildcardTable"></div>
+      </section>
+      <section class="panel">
+        <h2>Round of 16 field</h2>
+        <div id="qualifiers"></div>
+      </section>
+    </div>
+  </section>
+
+  <section id="groups" class="view">
+    <section class="panel">
+      <h2>Groups</h2>
+      <div id="groupsGrid" class="groups-grid"></div>
+    </section>
+  </section>
+
+  <section id="rules" class="view">
+    <section class="panel rules">
+      <h2>Tournament rules</h2>
+      <h3>Group stage</h3>
+      <ul>
+        <li>Seven groups of six players.</li>
+        <li>Each player plays every other player in their group exactly once: five matches per player.</li>
+        <li>Matches are best of five games; each game is played to 11 points.</li>
+        <li>The published date and time are the default appointment. Players may change them by mutual agreement.</li>
+        <li>Players should make every reasonable effort to complete all five group matches.</li>
+      </ul>
+
+      <h3>Ranking</h3>
+      <ol>
+        <li>Match wins</li>
+        <li>Win rate</li>
+        <li>Set ratio</li>
+        <li>Point differential</li>
+      </ol>
+
+      <h3>Eligibility & qualification</h3>
+      <ul>
+        <li>A player must complete at least three group-stage matches to be eligible for the knockout stage.</li>
+        <li>The top two eligible players in each group qualify automatically: 14 players.</li>
+        <li>The two best eligible third-place finishers across the seven groups also qualify.</li>
+        <li>The knockout stage therefore begins with 16 players.</li>
+      </ul>
+
+      <h3>Forfeits</h3>
+      <p>A forfeit counts as a match win/loss and as a match played, but no artificial sets or points are added.</p>
+
+      <h3>Unresolved exact tie</h3>
+      <p>If players remain exactly tied after all four ranking criteria, the organizer will apply a final tiebreak decision. This edge case has intentionally not been hard-coded yet.</p>
+    </section>
+  </section>
+</main>
+
+<footer>
+  <p>CERGE-EI Ping Pong League 2026 • Organized for the CERGE-EI community</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
