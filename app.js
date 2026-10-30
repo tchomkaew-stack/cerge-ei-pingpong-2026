@@ -154,76 +154,91 @@ function parseGroups(rows){
     .map(r=>({group:norm(r[0]),player:norm(r[1]),role:norm(r[2])}));
 }
 function parseSchedule(rows){
-  const clean=s=>norm(s).toLowerCase().replace(/\s+/g," ").trim();
-  const normalizeGroup=s=>{
-    const m=norm(s).match(/^(?:group\s*)?([A-G])$/i);
-    return m?m[1].toUpperCase():"";
-  };
+  const playerGroup=new Map(state.groups.map(x=>[x.player,x.group]));
+  const players=[...playerGroup.keys()].sort((a,b)=>b.length-a.length);
+
   const normalizeWeek=s=>{
     const m=norm(s).match(/^(?:week\s*)?([1-5])$/i);
     return m?Number(m[1]):0;
   };
-  const looksDate=s=>{
+  const normalizeTime=s=>{
     const v=norm(s);
-    return /2026/.test(v) || /^\d{1,2}[.\/-]\d{1,2}[.\/-](?:26|2026)$/.test(v);
+    const m=v.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(am|pm)?$/i);
+    if(!m)return "";
+    let h=Number(m[1]),min=m[2],ap=(m[3]||"").toLowerCase();
+    if(ap==="pm"&&h<12)h+=12;
+    if(ap==="am"&&h===12)h=0;
+    return String(h).padStart(2,"0")+":"+min;
   };
-  const looksTime=s=>{
+  const normalizeDate=s=>{
     const v=norm(s);
-    return /^\d{1,2}:\d{2}(?::\d{2})?\s*(?:am|pm)?$/i.test(v);
+    let m=v.match(/^(2026)[-\/.](\d{1,2})[-\/.](\d{1,2})$/);
+    if(m)return `${m[1]}-${String(Number(m[2])).padStart(2,"0")}-${String(Number(m[3])).padStart(2,"0")}`;
+    m=v.match(/^(\d{1,2})[.](\d{1,2})[.](2026)$/);
+    if(m)return `2026-${String(Number(m[2])).padStart(2,"0")}-${String(Number(m[1])).padStart(2,"0")}`;
+    m=v.match(/^(\d{1,2})\/(\d{1,2})\/(2026)$/);
+    if(m){
+      const a=Number(m[1]),b=Number(m[2]);
+      // Tournament is in Nov-Dec; infer which component is the month.
+      if(a===11||a===12)return `2026-${String(a).padStart(2,"0")}-${String(b).padStart(2,"0")}`;
+      if(b===11||b===12)return `2026-${String(b).padStart(2,"0")}-${String(a).padStart(2,"0")}`;
+    }
+    const d=new Date(v);
+    if(!Number.isNaN(d.getTime())&&d.getFullYear()===2026){
+      return `2026-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    }
+    return "";
+  };
+  const weekFromDate=iso=>{
+    if(!iso)return 0;
+    const md=iso.slice(5);
+    if(["11-02","11-03","11-04"].includes(md))return 1;
+    if(["11-09","11-10","11-11"].includes(md))return 2;
+    if(["11-16","11-18","11-19"].includes(md))return 3;
+    if(["11-23","11-24","11-25"].includes(md))return 4;
+    if(["11-30","12-01","12-02"].includes(md))return 5;
+    return 0;
   };
 
-  // First try normal header-based parsing.
-  const h=rows.findIndex(r=>{
-    const vals=r.map(clean);
-    return vals.includes("week") &&
-           vals.includes("group") &&
-           vals.some(v=>v==="player 1"||v==="player1") &&
-           vals.some(v=>v==="player 2"||v==="player2");
-  });
-
-  if(h>=0){
-    const hdr=rows[h].map(clean);
-    const ix={
-      week:hdr.indexOf("week"),
-      date:hdr.findIndex(v=>v==="date"||v.includes("date")),
-      time:hdr.findIndex(v=>v==="time"||v.includes("time")),
-      group:hdr.indexOf("group"),
-      p1:hdr.findIndex(v=>v==="player 1"||v==="player1"),
-      p2:hdr.findIndex(v=>v==="player 2"||v==="player2")
-    };
-    const parsed=rows.slice(h+1).map(r=>({
-      week:normalizeWeek(r[ix.week]),
-      date:ix.date>=0?norm(r[ix.date]):"",
-      time:ix.time>=0?norm(r[ix.time]):"",
-      group:normalizeGroup(r[ix.group]),
-      p1:norm(r[ix.p1]),
-      p2:norm(r[ix.p2])
-    })).filter(m=>m.week&&m.group&&m.p1&&m.p2);
-    if(parsed.length) return parsed;
-  }
-
-  // Fallback: infer each match row from values rather than fixed columns.
-  // This survives extra title columns / shifted columns introduced by Google Sheets.
-  const playerNames=new Set(state.groups.map(x=>x.player));
-  const inferred=[];
+  const out=[];
   for(const r of rows){
-    const cells=r.map(norm);
-    if(!cells.some(Boolean)) continue;
+    const cells=r.map(norm).filter(Boolean);
+    if(!cells.length)continue;
 
-    let group="",week=0,date="",time="";
+    const found=[];
     for(const c of cells){
-      if(!group) group=normalizeGroup(c);
-      if(!week) week=normalizeWeek(c);
-      if(!date && looksDate(c)) date=c;
-      if(!time && looksTime(c)) time=c;
+      if(playerGroup.has(c)&&!found.includes(c))found.push(c);
     }
+    if(found.length<2)continue;
 
-    const players=cells.filter(c=>playerNames.has(c));
-    if(group && week && players.length>=2){
-      inferred.push({week,date,time,group,p1:players[0],p2:players[1]});
+    // A valid match must contain two players from the same live group.
+    let p1="",p2="",group="";
+    outer: for(let i=0;i<found.length;i++){
+      for(let j=i+1;j<found.length;j++){
+        const g1=playerGroup.get(found[i]),g2=playerGroup.get(found[j]);
+        if(g1&&g1===g2){p1=found[i];p2=found[j];group=g1;break outer}
+      }
     }
+    if(!p1||!p2)continue;
+
+    let date="",time="",week=0;
+    for(const c of cells){
+      if(!date)date=normalizeDate(c);
+      if(!time)time=normalizeTime(c);
+      if(!week)week=normalizeWeek(c);
+    }
+    if(!week)week=weekFromDate(date);
+
+    out.push({week,date,time,group,p1,p2});
   }
-  return inferred;
+
+  // Deduplicate in case the visualization response repeats a row.
+  const seen=new Set();
+  return out.filter(m=>{
+    const key=[m.week,m.date,m.time,m.group,m.p1,m.p2].join("|");
+    if(seen.has(key))return false;
+    seen.add(key);return true;
+  });
 }
 function parseResults(rows){
   const h=headerIndex(rows,r=>norm(r[0]).toLowerCase()=="week"&&norm(r[11]).toLowerCase()=="winner");
@@ -284,11 +299,11 @@ async function refreshData(){
 
   const coreOk=state.groups.length>0 && state.schedule.length>0;
   if(coreOk && errors.length===0 && !scheduleFallbackUsed){
-    status.textContent="Live standings";
+    status.textContent="Live data • schedule live";
     status.className="status-pill live";
     status.title="Groups "+state.groups.length+" • Schedule "+state.schedule.length+" • Results "+state.results.length+" • Standings "+state.standings.length;
   }else if(coreOk && scheduleFallbackUsed && errors.length===0){
-    status.textContent="Live standings";
+    status.textContent="Live data • schedule cached";
     status.className="status-pill live";
     status.title="Groups live • Schedule cached from audited tournament workbook • Results/standings live when available";
     if(errBox){errBox.style.display="none";errBox.textContent="";}
