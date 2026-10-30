@@ -12,6 +12,7 @@
   --green:#256d3c;
   --green-bg:#eaf5ed;
   --gold:#8a6d1d;
+  --gold-bright:#d7b269;
   --gold-bg:#fff6d6;
   --shadow:0 14px 34px rgba(15,35,64,.08);
 }
@@ -338,4 +339,159 @@ footer{max-width:1180px;margin:0 auto 30px;padding:0 24px;color:var(--muted);fon
 @media(max-width:560px){
   .challenge-grid{grid-template-columns:1fr}
   .challenge-card{min-height:0}
+}
+
+/* Final visual polish */
+.hero{border-top:3px solid var(--gold-bright)}
+.hero::before{
+  content:"";
+  position:absolute;inset:0;
+  background:
+    radial-gradient(circle at 78% 22%,rgba(215,178,105,.10),transparent 18rem),
+    linear-gradient(115deg,transparent 0 63%,rgba(255,255,255,.02) 63% 64%,transparent 64%);
+  pointer-events:none;
+}
+.hero-side{
+  position:relative;
+  z-index:2;
+  display:flex;
+  align-items:center;
+  gap:18px;
+  flex:0 0 auto;
+}
+.hero-values{
+  margin-top:18px;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.hero-values span{
+  display:inline-flex;
+  align-items:center;
+  min-height:28px;
+  padding:5px 9px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.055);
+  color:#dce6f2;
+  font-size:.74rem;
+  font-weight:750;
+}
+.hall-of-fame{
+  width:245px;
+  border:1px solid rgba(215,178,105,.44);
+  background:linear-gradient(180deg,rgba(9,30,55,.78),rgba(12,35,64,.62));
+  border-radius:16px;
+  padding:13px 14px;
+  box-shadow:0 12px 28px rgba(0,0,0,.16);
+  backdrop-filter:blur(7px);
+}
+.hof-title{
+  color:var(--gold-bright);
+  font-size:.69rem;
+  font-weight:900;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  margin-bottom:7px;
+}
+.hof-row{
+  display:grid;
+  grid-template-columns:42px 1fr auto;
+  align-items:center;
+  gap:8px;
+  padding:7px 0;
+  border-top:1px solid rgba(255,255,255,.09);
+}
+.hof-year{
+  color:#c8d5e4;
+  font-size:.74rem;
+  font-weight:800;
+}
+.hof-row strong{
+  color:#fff;
+  font-size:.84rem;
+  line-height:1.15;
+}
+.hof-crown{
+  color:var(--gold-bright);
+  font-size:.65rem;
+  font-weight:850;
+  white-space:nowrap;
+}
+.hof-pending strong{color:#dbe5f1;font-weight:700}
+.hof-pending .hof-crown{color:#b9c4d1}
+.stat-card{
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 7px 20px rgba(15,35,64,.035);
+}
+.stat-card::after{
+  content:"";
+  position:absolute;
+  right:-18px;top:-28px;
+  width:74px;height:74px;border-radius:50%;
+  background:radial-gradient(circle,rgba(181,18,59,.07),transparent 70%);
+}
+.compact-stats .stat-card:nth-child(2n)::after{
+  background:radial-gradient(circle,rgba(215,178,105,.10),transparent 70%);
+}
+.section-heading h2,
+.panel>h2{
+  position:relative;
+}
+.section-heading h2::after,
+.panel>h2::after{
+  content:"";
+  display:block;
+  width:34px;
+  height:2px;
+  border-radius:2px;
+  margin-top:8px;
+  background:linear-gradient(90deg,var(--crimson),var(--gold-bright));
+}
+.history-panel{
+  background:
+    radial-gradient(circle at 95% 10%,rgba(215,178,105,.08),transparent 18rem),
+    linear-gradient(135deg,#fff,#fbfcfe);
+}
+.challenge-featured{
+  border-top-color:var(--gold-bright);
+  box-shadow:inset 0 3px 0 rgba(181,18,59,.08);
+}
+.challenge-tag{color:var(--crimson-2)}
+.challenge-stat{
+  border:1px solid #e8dfcf;
+  background:#fbf8f1;
+}
+.group-title{
+  border-bottom:2px solid var(--gold-bright);
+}
+.qualification-strip{
+  box-shadow:0 8px 22px rgba(15,35,64,.035);
+}
+footer{
+  position:relative;
+  padding-top:18px;
+}
+footer::before{
+  content:"";
+  position:absolute;
+  top:0;left:24px;right:24px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--line),transparent);
+}
+@media(max-width:1000px){
+  .hero-side{gap:10px}
+  .hall-of-fame{width:220px}
+  .hero-mark{width:96px;height:96px;flex-basis:96px}
+}
+@media(max-width:850px){
+  .hero-inner{align-items:flex-start}
+  .hero-side{width:100%;justify-content:flex-start}
+  .hall-of-fame{width:min(100%,360px)}
+}
+@media(max-width:620px){
+  .hero-side{display:block;margin-top:8px}
+  .hall-of-fame{width:100%}
+  .hof-row{grid-template-columns:42px 1fr}
+  .hof-crown{grid-column:2}
 }
