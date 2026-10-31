@@ -322,8 +322,8 @@ function renderNotifications(){
   const active=activeAnnouncements();
   const seen=getSeenNotices();
   const unseen=active.filter(a=>!seen.has(a.id));
-  btn.classList.toggle("has-unseen",unseen.length>0);
-  count.textContent=unseen.length?unseen.length+" unread tournament notification"+(unseen.length===1?"":"s"):"No unread tournament notifications";
+  btn.classList.toggle("has-unseen",active.length>0);
+  count.textContent=active.length?active.length+" active tournament notification"+(active.length===1?"":"s"):"No active tournament notifications";
   list.innerHTML=active.length?active.map(a=>{
     const internal=["home","schedule","standings","groups","rules"].includes(a.link.toLowerCase());
     const action=a.link?(internal
