@@ -1,5 +1,14 @@
 const SHEET_ID="1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI";
-const state={groups:[],schedule:[],results:[],standings:[]};
+const state={groups:[],schedule:[],results:[],standings:[],announcements:[]};
+const FALLBACK_ANNOUNCEMENTS=[{
+  id:"schedule-2026-11-03-opening-day",
+  title:"Schedule update — Tue, 3 Nov",
+  message:"Several match times for the opening day have changed. Please check your updated match time in the Schedule.",
+  link:"schedule",
+  start:"2026-10-31T00:00:00+01:00",
+  expiry:"2026-11-03T18:30:00+01:00"
+}];
+const SEEN_NOTICES_KEY="cerge_pingpong_seen_announcements_v1";
 const FALLBACK_SCHEDULE=`1|2026-11-03|09:00|G|Arman Kazemi|Duy Minh Do
 1|2026-11-03|10:00|C|Marek Kapička|Caner Kilic
 1|2026-11-03|11:00|A|Stephanie Ettmeier|Nazar Rudyi
@@ -261,6 +270,96 @@ function parseStandings(rows){
   return rows.slice(h+1).filter(r=>/^[A-G]$/.test(norm(r[0]))&&norm(r[1]))
     .map(r=>({group:norm(r[0]),player:norm(r[1]),wins:num(r[2]),losses:num(r[3]),matches:num(r[7]),winRate:r[8]===""?"":num(r[8]),setRatio:r[10]===""?"":num(r[10]),pointDiff:r[11]===""?"":num(r[11])}));
 }
+function parseAnnouncements(rows){
+  if(!rows?.length)return[];
+  const header=rows[0].map(x=>norm(x).toLowerCase());
+  const col=(...names)=>header.findIndex(h=>names.includes(h));
+  const iId=col("id");
+  const iTitle=col("title");
+  const iMessage=col("message","text");
+  const iLink=col("link","target");
+  const iStart=col("start","start date","start datetime");
+  const iExpiry=col("expiry","expires","end","end date","end datetime");
+  if(iTitle<0||iMessage<0)return[];
+  return rows.slice(1).map((r,idx)=>({
+    id:norm(iId>=0?r[iId]:"")||("notice-"+idx+"-"+norm(r[iTitle]).toLowerCase().replace(/[^a-z0-9]+/g,"-")),
+    title:norm(r[iTitle]),
+    message:norm(r[iMessage]),
+    link:norm(iLink>=0?r[iLink]:""),
+    start:norm(iStart>=0?r[iStart]:""),
+    expiry:norm(iExpiry>=0?r[iExpiry]:"")
+  })).filter(x=>x.title&&x.message);
+}
+function noticeTime(v){
+  if(!v)return null;
+  const d=new Date(v);
+  return Number.isNaN(d.getTime())?null:d;
+}
+function activeAnnouncements(){
+  const now=new Date();
+  return state.announcements.filter(a=>{
+    const s=noticeTime(a.start),e=noticeTime(a.expiry);
+    return (!s||now>=s)&&(!e||now<=e);
+  });
+}
+function getSeenNotices(){
+  try{
+    const value=JSON.parse(localStorage.getItem(SEEN_NOTICES_KEY)||"[]");
+    return new Set(Array.isArray(value)?value:[]);
+  }catch{return new Set()}
+}
+function saveSeenNotices(set){
+  try{localStorage.setItem(SEEN_NOTICES_KEY,JSON.stringify([...set]))}catch{}
+}
+function noticeExpiryLabel(v){
+  const d=noticeTime(v);
+  if(!d)return "";
+  return "Until "+new Intl.DateTimeFormat("en-GB",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}).format(d);
+}
+function renderNotifications(){
+  const btn=$("notificationBtn"),list=$("notificationList"),count=$("notificationCount");
+  if(!btn||!list)return;
+  const active=activeAnnouncements();
+  const seen=getSeenNotices();
+  const unseen=active.filter(a=>!seen.has(a.id));
+  btn.classList.toggle("has-unseen",unseen.length>0);
+  count.textContent=unseen.length?unseen.length+" unread tournament notification"+(unseen.length===1?"":"s"):"No unread tournament notifications";
+  list.innerHTML=active.length?active.map(a=>{
+    const internal=["home","schedule","standings","groups","rules"].includes(a.link.toLowerCase());
+    const action=a.link?(internal
+      ?`<button class="notification-link" type="button" data-notice-view="${esc(a.link.toLowerCase())}">View ${esc(a.link.charAt(0).toUpperCase()+a.link.slice(1).toLowerCase())} →</button>`
+      :`<a class="notification-link" href="${esc(a.link)}" target="_blank" rel="noopener noreferrer">Open update →</a>`):"";
+    return `<article class="notification-item">
+      <div class="notification-item-title">${esc(a.title)}</div>
+      <p>${esc(a.message)}</p>
+      ${a.expiry?`<span class="notification-time">${esc(noticeExpiryLabel(a.expiry))}</span>`:""}
+      ${action}
+    </article>`;
+  }).join(""):'<p class="notification-empty">No active updates right now.</p>';
+}
+function openView(view){
+  const tab=document.querySelector('.tab[data-view="'+view+'"]');
+  const target=$(view);
+  if(!tab||!target)return;
+  document.querySelectorAll(".tab,.view").forEach(x=>x.classList.remove("active"));
+  tab.classList.add("active");target.classList.add("active");
+  window.scrollTo({top:document.querySelector(".tabs")?.offsetTop||0,behavior:"smooth"});
+}
+function openNotifications(){
+  const panel=$("notificationPanel"),btn=$("notificationBtn");
+  if(!panel||!btn)return;
+  panel.hidden=false;
+  btn.setAttribute("aria-expanded","true");
+  const seen=getSeenNotices();
+  activeAnnouncements().forEach(a=>seen.add(a.id));
+  saveSeenNotices(seen);
+  renderNotifications();
+}
+function closeNotifications(){
+  const panel=$("notificationPanel"),btn=$("notificationBtn");
+  if(panel)panel.hidden=true;
+  if(btn)btn.setAttribute("aria-expanded","false");
+}
 function scorePair(s){
   const m=norm(s).match(/^(\d+)\s*[-–:]\s*(\d+)$/);
   return m?[Number(m[1]),Number(m[2])]:null;
@@ -332,11 +431,16 @@ async function refreshData(){
   const names=["Groups","Schedule","Results recording","Standing"];
   const loaded={};
   const errors=[];
+  let announcementsLoaded=false;
 
   for(const name of names){
     try{ loaded[name]=await fetchSheet(name); }
     catch(e){ errors.push(e.message||String(e)); }
   }
+  try{
+    loaded["Announcements"]=await fetchSheet("Announcements");
+    announcementsLoaded=true;
+  }catch{}
 
   if(loaded["Groups"]) state.groups=parseGroups(loaded["Groups"]);
   let scheduleFallbackUsed=false;
@@ -348,6 +452,7 @@ async function refreshData(){
   if(loaded["Results recording"]) state.results=parseResults(loaded["Results recording"]);
   const sheetStandings=loaded["Standing"]?parseStandings(loaded["Standing"]):[];
   state.standings=state.groups.length?deriveStandings():sheetStandings;
+  state.announcements=announcementsLoaded?parseAnnouncements(loaded["Announcements"]):FALLBACK_ANNOUNCEMENTS;
 
   const coreOk=state.groups.length>0 && state.schedule.length>0;
   if(coreOk && errors.length===0 && !scheduleFallbackUsed){
@@ -462,12 +567,26 @@ function renderChallenges(){
   </article>`).join("");
 }
 
-function renderAll(){renderHome();renderSchedule();renderGroups();renderStandings();renderChallenges()}
+function renderAll(){renderHome();renderSchedule();renderGroups();renderStandings();renderChallenges();renderNotifications()}
 
-document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
-  document.querySelectorAll(".tab,.view").forEach(x=>x.classList.remove("active"));
-  b.classList.add("active");$(b.dataset.view).classList.add("active");
-}));
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
+$("notificationBtn")?.addEventListener("click",()=>{
+  const panel=$("notificationPanel");
+  if(panel?.hidden)openNotifications();else closeNotifications();
+});
+$("notificationClose")?.addEventListener("click",closeNotifications);
+$("notificationList")?.addEventListener("click",e=>{
+  const target=e.target.closest("[data-notice-view]");
+  if(!target)return;
+  openView(target.dataset.noticeView);
+  closeNotifications();
+});
+document.addEventListener("click",e=>{
+  const panel=$("notificationPanel"),btn=$("notificationBtn");
+  if(!panel||panel.hidden||panel.contains(e.target)||btn?.contains(e.target))return;
+  closeNotifications();
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeNotifications()});
 $("homePlayerSearch").addEventListener("input",renderMyMatches);
 $("scheduleSearch").addEventListener("input",renderSchedule);
 $("groupFilter").addEventListener("change",renderSchedule);
