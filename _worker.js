@@ -1,5 +1,5 @@
 const SHEET_ID = "1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI";
-const ALLOWED = new Set(["Groups", "Schedule", "Results recording", "Standing"]);
+const ALLOWED = new Set(["Groups", "Schedule", "Results recording", "Standing", "Announcements"]);
 
 export default {
   async fetch(request, env) {
