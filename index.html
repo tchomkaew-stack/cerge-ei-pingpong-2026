@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="CERGE-EI Ping Pong League 2026 tournament hub: schedule, standings, groups, results and rules.">
   <title>CERGE-EI Ping Pong League 2026</title>
-  <link rel="stylesheet" href="styles.css?v=20261030-launch3">
+  <link rel="stylesheet" href="styles.css?v=20261031-notifications1">
 </head>
 <body>
 <header class="hero">
@@ -50,10 +50,26 @@
   <button class="tab" data-view="standings">Standings</button>
   <button class="tab" data-view="groups">Groups</button>
   <button class="tab" data-view="rules">Rules</button>
+  <button id="notificationBtn" class="notification-btn" type="button" aria-label="Tournament notifications" aria-expanded="false" aria-controls="notificationPanel">
+    <span class="notification-bell" aria-hidden="true">🔔</span>
+    <span id="notificationDot" class="notification-dot" aria-hidden="true"></span>
+    <span id="notificationCount" class="sr-only"></span>
+  </button>
   <span class="nav-divider" aria-hidden="true"></span>
   <a class="nav-action" href="https://docs.google.com/spreadsheets/d/1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Change Schedule</a>
   <a class="nav-action nav-action-primary" href="https://docs.google.com/spreadsheets/d/1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Record Score</a>
 </nav>
+
+<aside id="notificationPanel" class="notification-panel" aria-label="Tournament notifications" hidden>
+  <div class="notification-panel-head">
+    <div>
+      <span class="section-label">UPDATES</span>
+      <h2>Notifications</h2>
+    </div>
+    <button id="notificationClose" class="notification-close" type="button" aria-label="Close notifications">×</button>
+  </div>
+  <div id="notificationList" class="notification-list"></div>
+</aside>
 
 <main>
   <section id="home" class="view active">
@@ -252,7 +268,7 @@
   <p>CERGE-EI Ping Pong League 2026 • Organized for the CERGE-EI community</p>
 </footer>
 
-<script src="app.js?v=20261030-standings3"></script>
+<script src="app.js?v=20261031-notifications1"></script>
   <!-- Cloudflare Web Analytics --><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"cf4b67f5c23d4509a9bf91c446bc2d6f"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>
