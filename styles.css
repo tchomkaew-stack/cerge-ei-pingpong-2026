@@ -700,3 +700,32 @@ footer::before{
     max-height:calc(100vh - 160px);
   }
 }
+
+
+/* Draw attention to unseen tournament updates without being constantly distracting */
+.notification-btn.has-unseen .notification-bell{
+  transform-origin:50% 10%;
+  animation:notification-bell-shake 5.5s ease-in-out infinite;
+}
+.notification-btn.has-unseen .notification-dot{
+  animation:notification-dot-pulse 1.8s ease-out infinite;
+}
+@keyframes notification-bell-shake{
+  0%,78%,100%{transform:rotate(0deg)}
+  80%{transform:rotate(0deg)}
+  82%{transform:rotate(13deg)}
+  84%{transform:rotate(-12deg)}
+  86%{transform:rotate(10deg)}
+  88%{transform:rotate(-8deg)}
+  90%{transform:rotate(5deg)}
+  92%{transform:rotate(-3deg)}
+  94%{transform:rotate(0deg)}
+}
+@keyframes notification-dot-pulse{
+  0%,100%{box-shadow:0 0 0 2px rgba(223,32,62,.12)}
+  50%{box-shadow:0 0 0 7px rgba(223,32,62,.11)}
+}
+@media(prefers-reduced-motion:reduce){
+  .notification-btn.has-unseen .notification-bell,
+  .notification-btn.has-unseen .notification-dot{animation:none}
+}
