@@ -7,6 +7,13 @@ const FALLBACK_ANNOUNCEMENTS=[{
   link:"schedule",
   start:"2026-10-31T00:00:00+01:00",
   expiry:"2026-11-03T18:30:00+01:00"
+},{
+  id:"academic-priority-nov-2026",
+  title:"Academic weeks ahead",
+  message:"Midterm Weeks (2–13 Nov) and DPW/State Doctoral Exams Week (23–27 Nov) are coming up. Please reschedule matches as needed to avoid academic distractions.",
+  link:"schedule",
+  start:"2026-10-31T00:00:00+01:00",
+  expiry:"2026-11-27T23:59:00+01:00"
 }];
 const SEEN_NOTICES_KEY="cerge_pingpong_seen_announcements_v1";
 const FALLBACK_SCHEDULE=`1|2026-11-03|09:00|G|Arman Kazemi|Duy Minh Do
@@ -452,7 +459,13 @@ async function refreshData(){
   if(loaded["Results recording"]) state.results=parseResults(loaded["Results recording"]);
   const sheetStandings=loaded["Standing"]?parseStandings(loaded["Standing"]):[];
   state.standings=state.groups.length?deriveStandings():sheetStandings;
-  state.announcements=announcementsLoaded?parseAnnouncements(loaded["Announcements"]):FALLBACK_ANNOUNCEMENTS;
+  const sheetAnnouncements=announcementsLoaded?parseAnnouncements(loaded["Announcements"]):[];
+  const mergedAnnouncements=[...FALLBACK_ANNOUNCEMENTS];
+  for(const a of sheetAnnouncements){
+    const i=mergedAnnouncements.findIndex(x=>x.id===a.id);
+    if(i>=0)mergedAnnouncements[i]=a;else mergedAnnouncements.push(a);
+  }
+  state.announcements=mergedAnnouncements;
 
   const coreOk=state.groups.length>0 && state.schedule.length>0;
   if(coreOk && errors.length===0 && !scheduleFallbackUsed){
@@ -567,7 +580,23 @@ function renderChallenges(){
   </article>`).join("");
 }
 
-function renderAll(){renderHome();renderSchedule();renderGroups();renderStandings();renderChallenges();renderNotifications()}
+function renderOpeningMatches(){
+  const el=$("openingMatches");
+  if(!el)return;
+  const findMatch=(a,b)=>state.schedule.find(m=>[m.p1,m.p2].includes(a)&&[m.p1,m.p2].includes(b));
+  const marek=findMatch("Marek Kapička","Caner Kilic");
+  const ctirad=findMatch("Ctirad Slavik","Filip Galla");
+  const card=(m,badge,desc)=>m?`<article class="opening-match-card">
+    <span class="opening-match-badge">${esc(badge)}</span>
+    <h3>${esc(fmtDate(m.date))} · ${esc(m.time)} · ${esc(m.p1)} vs ${esc(m.p2)}</h3>
+    <p>${esc(desc)}</p>
+  </article>`:"";
+  el.innerHTML=[
+    card(marek,"1st match · Director opens the league","A small league tradition: the Director plays the first match of the season."),
+    card(ctirad,"2nd match · Defending champion","Last season’s champion follows in the second match of opening day.")
+  ].join("");
+}
+function renderAll(){renderHome();renderSchedule();renderGroups();renderStandings();renderChallenges();renderOpeningMatches();renderNotifications()}
 
 document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
 $("notificationBtn")?.addEventListener("click",()=>{
