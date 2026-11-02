@@ -786,3 +786,19 @@ footer::before{
   .opening-match-grid{grid-template-columns:1fr}
   .schedule-priority-line{font-size:.84rem}
 }
+
+.rule-clarification-banner{
+  max-width:1180px;
+  margin:12px auto 0;
+  padding:11px 16px;
+  border:1px solid #ead9b7;
+  border-left:4px solid var(--gold-bright);
+  border-radius:12px;
+  background:#fffaf0;
+  color:#5b4a24;
+  font-size:.9rem;
+  line-height:1.45;
+}
+@media(max-width:850px){
+  .rule-clarification-banner{margin:10px 12px 0;}
+}
