@@ -16,13 +16,13 @@ const FALLBACK_ANNOUNCEMENTS=[{
   expiry:"2026-11-27T23:59:00+01:00"
 }];
 const SEEN_NOTICES_KEY="cerge_pingpong_seen_announcements_v1";
-const FALLBACK_SCHEDULE=`1|2026-11-03|09:00|G|Arman Kazemi|Duy Minh Do
-1|2026-11-03|10:00|C|Marek Kapička|Caner Kilic
-1|2026-11-03|11:00|A|Stephanie Ettmeier|Nazar Rudyi
+const FALLBACK_SCHEDULE=`1|2026-11-03|14:30|C|Marek Kapička|Michael Schulz
+1|2026-11-03|15:15|B|Ctirad Slavik|Filip Galla
+1|2026-11-03|16:00|A|Stephanie Ettmeier|Nazar Rudyi
 1|2026-11-03|12:00|E|Gayane Baghumyan|Shafin Shabir
-1|2026-11-03|13:00|F|Tomáš Pavela|Winnie Njoroge
-1|2026-11-03|16:00|B|Ctirad Slavik|Filip Galla
-1|2026-11-03|17:00|A|Stephanie Halamek|Morteza Nasiri
+1|2026-11-03|16:45|F|Tomáš Pavela|Winnie Njoroge
+1|2026-11-03|17:30|G|Arman Kazemi|Duy Minh Do
+1|2026-11-03|18:15|A|Stephanie Halamek|Morteza Nasiri
 1|2026-11-04|09:00|B|Jonas Tomkin|Filipa Osorio
 1|2026-11-04|10:00|F|Filip Matejka|Saba Khizanishvili
 1|2026-11-04|11:00|G|Maxi Guennewig|José Gómez
@@ -583,9 +583,10 @@ function renderChallenges(){
 function renderOpeningMatches(){
   const el=$("openingMatches");
   if(!el)return;
-  const findMatch=(a,b)=>state.schedule.find(m=>[m.p1,m.p2].includes(a)&&[m.p1,m.p2].includes(b));
-  const marek=findMatch("Marek Kapička","Caner Kilic");
-  const ctirad=findMatch("Ctirad Slavik","Filip Galla");
+  const openingDay=state.schedule.filter(m=>m.date==="2026-11-03");
+  const findPlayerMatch=name=>openingDay.find(m=>m.p1===name||m.p2===name);
+  const marek=findPlayerMatch("Marek Kapička");
+  const ctirad=findPlayerMatch("Ctirad Slavik");
   const card=(m,badge,desc)=>m?`<article class="opening-match-card">
     <span class="opening-match-badge">${esc(badge)}</span>
     <h3>${esc(fmtDate(m.date))} · ${esc(m.time)} · ${esc(m.p1)} vs ${esc(m.p2)}</h3>
