@@ -1,6 +1,13 @@
 const SHEET_ID="1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI";
 const state={groups:[],schedule:[],results:[],standings:[],announcements:[]};
 const FALLBACK_ANNOUNCEMENTS=[{
+  id:"group-stage-best-of-five-2026-11-02",
+  title:"Rule clarification — group stage is best of 5",
+  message:"Group-stage matches are best of five games (first to 3 games), with each game played to 11 points. The Rules page has been corrected.",
+  link:"rules",
+  start:"2026-11-02T17:20:00+01:00",
+  expiry:"2026-11-09T23:59:00+01:00"
+},{
   id:"schedule-2026-11-03-opening-day",
   title:"Schedule update — Tue, 3 Nov",
   message:"Several match times for the opening day have changed. Please check your updated match time in the Schedule.",
