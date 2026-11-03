@@ -1,11 +1,11 @@
 /**
+ * @OnlyCurrentDoc
  * CERGE-EI Ping Pong League 2026: authorized score recording bridge.
  * Deploy as a Google Apps Script Web App, executing as the Sheet owner.
  * Set Script Property SCORE_WRITE_SECRET to exactly the same random secret
  * as Cloudflare Pages' SCORE_WRITE_SECRET secret variable.
  * Do NOT publish this secret or use the spreadsheet editor link as the endpoint.
  */
-const SPREADSHEET_ID = '1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI';
 const SCORE_SHEET = 'Results recording';
 
 function respond_(body) {
@@ -44,7 +44,8 @@ function doPost(e) {
     const p1=String(body.p1||'').trim(),p2=String(body.p2||'').trim();
     if(!p1 || !p2 || normalized_(p1)===normalized_(p2)) throw Error('Invalid players.');
     const data=validateScores_(body.scores);
-    const ss=SpreadsheetApp.openById(SPREADSHEET_ID);
+    const ss=SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss || ss.getId() !== '1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI') throw Error('This script must be bound to the tournament spreadsheet.');
     const sheet=ss.getSheetByName(SCORE_SHEET);
     if(!sheet)throw Error('Results recording tab not found.');
     const all=sheet.getDataRange().getDisplayValues();
