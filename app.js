@@ -727,7 +727,7 @@ function validateScoreForm(){
     const result=readScoreForm();
     const who=result.wins[0]===3?match.p1:match.p2;
     winner.textContent=who+" wins "+result.wins.join("–")+" games.";
-    btn.disabled=!scoreWriteEnabled||scoreSubmitting||!$("scoreEntryPin").value.trim();
+    btn.disabled=!scoreWriteEnabled||scoreSubmitting;
     if(feedback&&!scoreSubmitting)feedback.textContent="";
   }catch(e){
     winner.textContent=e.message;
@@ -744,7 +744,6 @@ async function checkScoreWriteAvailability(){
   if(notice)notice.textContent=scoreWriteEnabled
     ?"Direct score recording is available. Enter your match result below."
     :"Direct score recording is awaiting organizer setup. Please use the Google Sheet link in the instructions below for now.";
-  if($("scoreEntryPin"))$("scoreEntryPin").disabled=!scoreWriteEnabled;
   validateScoreForm();
 }
 async function submitScoreForm(e){
@@ -754,18 +753,15 @@ async function submitScoreForm(e){
   if(!match)return;
   let checked;
   try{checked=readScoreForm()}catch(err){$("scoreEntryFeedback").textContent=err.message;return}
-  const pin=$("scoreEntryPin").value;
-  if(!pin){$("scoreEntryFeedback").textContent="Enter the submission PIN.";return}
   scoreSubmitting=true;validateScoreForm();
   $("scoreEntryFeedback").textContent="Saving to Google Sheets…";
   try{
     const r=await fetch("/api/submit-score",{
       method:"POST",headers:{"content-type":"application/json"},
-      body:JSON.stringify({group:match.group,p1:match.p1,p2:match.p2,scores:checked.games,pin})
+      body:JSON.stringify({group:match.group,p1:match.p1,p2:match.p2,scores:checked.games})
     });
     const data=await r.json();
     if(!r.ok||!data.ok)throw Error(data.error||"Could not save the result.");
-    $("scoreEntryPin").value="";
     document.querySelectorAll("#scoreGames input").forEach(x=>x.value="");
     await refreshData();
     openView("record-score");
