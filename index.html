@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="CERGE-EI Ping Pong League 2026 tournament hub: schedule, standings, groups, results and rules.">
   <title>CERGE-EI Ping Pong League 2026</title>
-  <link rel="stylesheet" href="styles.css?v=20261103-score-guide-1">
+  <link rel="stylesheet" href="styles.css?v=20261103-schedule-guide-1">
 </head>
 <body>
 <header class="hero">
@@ -57,7 +57,7 @@
     <span id="notificationCount" class="sr-only"></span>
   </button>
   <span class="nav-divider" aria-hidden="true"></span>
-  <a class="nav-action" href="https://docs.google.com/spreadsheets/d/1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Change Schedule</a>
+  <button class="nav-action" type="button" data-view="change-schedule" aria-controls="change-schedule">Change Schedule</button>
   <button class="nav-action nav-action-primary" type="button" data-view="record-score" aria-controls="record-score">Record Score</button>
 </nav>
 
@@ -274,6 +274,95 @@
     </section>
   </section>
 
+  
+  <section id="change-schedule" class="view" aria-labelledby="scheduleGuideTitle">
+    <section class="panel score-guide schedule-guide">
+      <span class="section-label">FOR PLAYERS · QUICK GUIDE</span>
+      <h2 id="scheduleGuideTitle">How to change your match time</h2>
+      <p class="score-lead">Our league is meant to be <strong>friendly and flexible</strong>, not an extra source of pressure. Classes, work, research, and personal responsibilities come first. The dates on the website are simply a starting point to help everyone organize their matches.</p>
+
+      <div class="schedule-kindness" role="note">
+        <strong>Be patient with each other. 💙</strong>
+        <p>Sometimes someone is busy, slow to reply, or it takes a few messages to find a time that works for both people. That's completely normal! Please give your opponent time to respond and keep trying kindly. A <strong>forfeit is only a last resort in exceptional cases</strong>, not a penalty for being busy. If scheduling becomes genuinely difficult, contact the Sports Representative and we'll help.</p>
+        <p>If a class or another scheduled CERGE-EI activity needs the ping-pong room, <strong>the class or activity comes first</strong> — simply find another time for the match.</p>
+      </div>
+
+      <div class="score-steps">
+        <article class="score-step">
+          <span class="score-step-number" aria-hidden="true">1</span>
+          <div>
+            <h3>Talk to your opponent</h3>
+            <p>Message or speak with your opponent and agree on a <strong>new date and time that suit both of you</strong>. Please don't change the time without checking with them first.</p>
+          </div>
+        </article>
+        <article class="score-step">
+          <span class="score-step-number" aria-hidden="true">2</span>
+          <div>
+            <h3>Open the Google Sheet</h3>
+            <p>Use the button at the bottom of this page. In the Sheet, choose the tab called <strong>Schedule</strong> (not “Results recording” or “Standing”).</p>
+          </div>
+        </article>
+        <article class="score-step">
+          <span class="score-step-number" aria-hidden="true">3</span>
+          <div>
+            <h3>Find your match</h3>
+            <p>Look for the row containing <strong>both your name and your opponent's name</strong> under Player 1 and Player 2 (columns <strong>E and F</strong>). Double-check you've found the correct match.</p>
+          </div>
+        </article>
+        <article class="score-step">
+          <span class="score-step-number" aria-hidden="true">4</span>
+          <div>
+            <h3>Change the date and time</h3>
+            <p>In that same row, change only <strong>Date (column B)</strong> and <strong>Time (column C)</strong> to your newly agreed appointment. Keep the date in the same format as the other dates, and enter the time like <code>16:00</code> (24-hour clock).</p>
+            <p>You can use <strong>Reschedule / Note (column G)</strong> if a short explanation is useful, but it is optional. Leave <strong>Week, Group, Player 1 and Player 2</strong> unchanged.</p>
+          </div>
+        </article>
+
+        <div class="score-example schedule-example" aria-label="Illustration of changing a match appointment">
+          <span class="score-example-kicker">EXAMPLE ONLY — YOUR OWN MATCH MAY BE DIFFERENT</span>
+          <div class="schedule-example-match"><strong>Alex vs Sam</strong><span>Same match, new agreed time</span></div>
+          <div class="schedule-example-grid">
+            <div class="schedule-example-state">
+              <span class="schedule-example-label">BEFORE</span>
+              <div><small>Date · Column B</small><strong>3 Nov 2026</strong></div>
+              <div><small>Time · Column C</small><strong>14:30</strong></div>
+            </div>
+            <span class="schedule-example-arrow" aria-hidden="true">→</span>
+            <div class="schedule-example-state changed">
+              <span class="schedule-example-label">AFTER</span>
+              <div><small>Date · Column B</small><strong>5 Nov 2026</strong></div>
+              <div><small>Time · Column C</small><strong>16:00</strong></div>
+            </div>
+          </div>
+          <p>Alex and Sam have <strong>both agreed</strong> to play on 5 November at 16:00. They edit the <strong>Date</strong> and <strong>Time</strong> cells in their existing Schedule row — nothing else.</p>
+        </div>
+
+        <article class="score-step">
+          <span class="score-step-number" aria-hidden="true">5</span>
+          <div>
+            <h3>You're done — check the website!</h3>
+            <p>Google Sheets saves your edits automatically. The tournament website reads the updated Schedule sheet, so the new appointment should appear there too. Return to <strong>Schedule</strong> on the website and refresh the page to see the change.</p>
+            <p>If the change doesn't appear or you accidentally edited the wrong row, please let the Sports Representative know so we can help.</p>
+          </div>
+        </article>
+      </div>
+
+      <div class="score-sheet-cta">
+        <div>
+          <strong>Agreed on a new time?</strong>
+          <p>Open the shared Google Sheet, select “Schedule”, and edit the date and time for your match.</p>
+        </div>
+        <a class="score-sheet-button" href="https://docs.google.com/spreadsheets/d/1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Open Google Sheet to change schedule <span aria-hidden="true">↗</span></a>
+      </div>
+
+      <div class="score-help">
+        <p><strong>On a phone?</strong> Scroll sideways in Google Sheets if the columns don't all fit. The Google Sheets app may make editing easier.</p>
+        <p><strong>Can't agree on a time?</strong> It's okay to take a little longer. Please keep communicating kindly, and ask the Sports Representative for help if needed.</p>
+        <p><strong>Remember:</strong> Only edit your own match's date and time, after both players agree. Don't delete or move rows.</p>
+      </div>
+    </section>
+  </section>
+
   <section id="record-score" class="view" aria-labelledby="scoreGuideTitle">
     <section class="panel score-guide">
       <span class="section-label">FOR PLAYERS · QUICK GUIDE</span>
@@ -357,7 +446,7 @@
 </main>
 
 <div class="mobile-actions" aria-label="Quick tournament actions">
-  <a href="https://docs.google.com/spreadsheets/d/1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Change Schedule</a>
+  <button type="button" data-view="change-schedule" aria-controls="change-schedule">Change Schedule</button>
   <button class="mobile-action-primary" type="button" data-view="record-score" aria-controls="record-score">Record Score</button>
 </div>
 
@@ -365,7 +454,7 @@
   <p>CERGE-EI Ping Pong League 2026 • Organized for the CERGE-EI community</p>
 </footer>
 
-<script src="app.js?v=20261103-score-guide-1"></script>
+<script src="app.js?v=20261103-schedule-guide-1"></script>
   <!-- Cloudflare Web Analytics --><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"cf4b67f5c23d4509a9bf91c446bc2d6f"}'></script><!-- End Cloudflare Web Analytics -->
   <!-- deploy-refresh: 2026-11-02T17:20+01:00 -->
 </body>
