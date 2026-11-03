@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="CERGE-EI Ping Pong League 2026 tournament hub: schedule, standings, groups, results and rules.">
   <title>CERGE-EI Ping Pong League 2026</title>
-  <link rel="stylesheet" href="styles.css?v=20261102-bestof5-1">
+  <link rel="stylesheet" href="styles.css?v=20261103-score-guide-1">
 </head>
 <body>
 <header class="hero">
@@ -58,7 +58,7 @@
   </button>
   <span class="nav-divider" aria-hidden="true"></span>
   <a class="nav-action" href="https://docs.google.com/spreadsheets/d/1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Change Schedule</a>
-  <a class="nav-action nav-action-primary" href="https://docs.google.com/spreadsheets/d/1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Record Score</a>
+  <button class="nav-action nav-action-primary" type="button" data-view="record-score" aria-controls="record-score">Record Score</button>
 </nav>
 
 <div id="bestOfFiveNotice" class="rule-clarification-banner" role="status">
@@ -273,18 +273,99 @@
       <p class="small-note">This Rules page follows the participant manual. If a rule needs clarification during the tournament, the Sports Representative will communicate the update to participants.</p>
     </section>
   </section>
+
+  <section id="record-score" class="view" aria-labelledby="scoreGuideTitle">
+    <section class="panel score-guide">
+      <span class="section-label">FOR PLAYERS · QUICK GUIDE</span>
+      <h2 id="scoreGuideTitle">How to record your match score</h2>
+      <p class="score-lead">Just finished a match? Great! Follow these steps. <strong>You will enter the result in the Google Sheet</strong> — the website is here to show you how.</p>
+
+      <div class="score-steps">
+        <article class="score-step">
+          <span class="score-step-number" aria-hidden="true">1</span>
+          <div>
+            <h3>Open the Google Sheet</h3>
+            <p>Use the button at the bottom of this guide. In the Sheet, select the tab called <strong>Results recording</strong> (not “Standing” or “Schedule”).</p>
+          </div>
+        </article>
+        <article class="score-step">
+          <span class="score-step-number" aria-hidden="true">2</span>
+          <div>
+            <h3>Find your match</h3>
+            <p>Look for the row showing both players' names. Pay attention to who is listed as <strong>Player 1 (column E)</strong> and <strong>Player 2 (column F)</strong>.</p>
+          </div>
+        </article>
+        <article class="score-step">
+          <span class="score-step-number" aria-hidden="true">3</span>
+          <div>
+            <h3>Type the scores, one game at a time</h3>
+            <p>Enter each finished game in <strong>Score Set 1–5 (columns G–K)</strong>, using a normal dash like <code>8-11</code>. <strong>Always write Player 1's points first, then Player 2's points.</strong> Don't put the winner's points first unless the winner happens to be Player 1.</p>
+            <p>Because matches are <strong>best of 5</strong>, stop when somebody wins <strong>3 games</strong>. Leave unused score cells empty.</p>
+          </div>
+        </article>
+
+        <div class="score-example" aria-label="Example of recording a match">
+          <span class="score-example-kicker">EXAMPLE ONLY — DO NOT TYPE THIS INTO THE SHEET</span>
+          <div class="score-example-players">
+            <span><small>PLAYER 1</small><strong>Alex</strong></span>
+            <span class="score-example-vs">vs</span>
+            <span><small>PLAYER 2</small><strong>Sam</strong></span>
+          </div>
+          <div class="score-example-grid">
+            <div><span>Set 1</span><strong>8-11</strong><small>Sam wins</small></div>
+            <div><span>Set 2</span><strong>11-7</strong><small>Alex wins</small></div>
+            <div><span>Set 3</span><strong>11-9</strong><small>Alex wins</small></div>
+            <div><span>Set 4</span><strong>11-6</strong><small>Alex wins</small></div>
+            <div class="score-example-empty"><span>Set 5</span><strong>—</strong><small>Leave blank</small></div>
+          </div>
+          <p><strong>Why is Set 1 written 8-11?</strong> Because Alex is Player 1 and scored 8 points, while Sam is Player 2 and scored 11. Alex then wins the next three games, so <strong>Alex wins the match 3–1</strong>.</p>
+        </div>
+
+        <article class="score-step">
+          <span class="score-step-number" aria-hidden="true">4</span>
+          <div>
+            <h3>Choose the match winner</h3>
+            <p>In <strong>Winner (column L)</strong>, click the dropdown and select the player who won <strong>3 games</strong>. In our example, choose <strong>Alex</strong>.</p>
+            <p><strong>Set Score (column M)</strong> updates automatically — you do <strong>not</strong> need to type the final 3–1 yourself.</p>
+          </div>
+        </article>
+        <article class="score-step">
+          <span class="score-step-number" aria-hidden="true">5</span>
+          <div>
+            <h3>That's it — you're done!</h3>
+            <p>Google Sheets saves your changes automatically. You can return to the tournament website and refresh to check the latest results and standings.</p>
+          </div>
+        </article>
+      </div>
+
+      <div class="score-sheet-cta">
+        <div>
+          <strong>Ready to enter your real result?</strong>
+          <p>Open the shared Sheet, go to “Results recording”, and fill in your match.</p>
+        </div>
+        <a class="score-sheet-button" href="https://docs.google.com/spreadsheets/d/1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Open Google Sheet to record score <span aria-hidden="true">↗</span></a>
+      </div>
+
+      <div class="score-help">
+        <p><strong>On a phone?</strong> The Google Sheet is wide, so scroll sideways to find columns G–M. The Google Sheets app may make editing easier.</p>
+        <p><strong>A match was forfeited or something looks wrong?</strong> Please contact the Sports Representative rather than inventing game scores. The forfeit field is handled separately.</p>
+        <p><strong>Please leave the other columns alone.</strong> In particular, don't overwrite the players' names or the automatic Set Score formula.</p>
+      </div>
+    </section>
+  </section>
+
 </main>
 
 <div class="mobile-actions" aria-label="Quick tournament actions">
   <a href="https://docs.google.com/spreadsheets/d/1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Change Schedule</a>
-  <a class="mobile-action-primary" href="https://docs.google.com/spreadsheets/d/1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Record Score</a>
+  <button class="mobile-action-primary" type="button" data-view="record-score" aria-controls="record-score">Record Score</button>
 </div>
 
 <footer>
   <p>CERGE-EI Ping Pong League 2026 • Organized for the CERGE-EI community</p>
 </footer>
 
-<script src="app.js?v=20261103-results-fix">></script>
+<script src="app.js?v=20261103-score-guide-1"></script>
   <!-- Cloudflare Web Analytics --><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"cf4b67f5c23d4509a9bf91c446bc2d6f"}'></script><!-- End Cloudflare Web Analytics -->
   <!-- deploy-refresh: 2026-11-02T17:20+01:00 -->
 </body>
