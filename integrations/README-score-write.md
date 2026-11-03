@@ -11,9 +11,9 @@ This feature is already implemented in the live website source:
 
 **Step 1 — Create Apps Script**
 
-1. Open the existing [tournament Google Sheet](https://docs.google.com/spreadsheets/d/1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI/edit).
-2. Select **Extensions → Apps Script**.
-3. Replace the editor's `Code.gs` with the contents of [Code.gs](./google-apps-script/Code.gs) in this repository.
+1. Open the existing [tournament Google Sheet](https://docs.google.com/spreadsheets/d/1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI/edit) in a DESKTOP browser (or request desktop site).
+2. Select **Extensions → Apps Script**. **Do not create a standalone project at script.google.com.** The app must be bound to this particular spreadsheet to use the limited `spreadsheets.currentonly` access.
+3. Replace the editor's `Code.gs` with the contents of [Code.gs](./google-apps-script/Code.gs) in this repository. The `@OnlyCurrentDoc` annotation restricts access to the bound spreadsheet; if authorization asks for all Google Sheets, cancel and check you opened Apps Script through the tournament sheet.
 4. Open **Project Settings → Script Properties**. Create `SCORE_WRITE_SECRET` with a long randomly generated secret (minimum 32 random characters).
 5. Choose **Deploy → New deployment → Web app**. Execute as **Me** (the spreadsheet owner), access **Anyone**. Apps Script will request authorization to edit the sheet; review and approve it.
 6. Copy the Web app URL ending in `/exec`. Do not use the editor URL or `/dev` URL.
