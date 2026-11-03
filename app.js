@@ -797,7 +797,6 @@ $("weekFilter").addEventListener("change",renderSchedule);
 $("refreshBtn").addEventListener("click",refreshData);
 $("scoreMatchSelect")?.addEventListener("change",()=>{document.querySelectorAll("#scoreGames input").forEach(x=>x.value="");showScoreMatch()});
 $("scoreGames")?.addEventListener("input",validateScoreForm);
-$("scoreEntryPin")?.addEventListener("input",validateScoreForm);
 $("scoreEntryForm")?.addEventListener("submit",submitScoreForm);
 checkScoreWriteAvailability();
 refreshData();
