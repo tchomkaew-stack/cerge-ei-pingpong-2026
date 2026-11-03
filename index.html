@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="CERGE-EI Ping Pong League 2026 tournament hub: schedule, standings, groups, results and rules.">
   <title>CERGE-EI Ping Pong League 2026</title>
-  <link rel="stylesheet" href="styles.css?v=20261103-schedule-guide-1">
+  <link rel="stylesheet" href="styles.css?v=20261103-direct-score-1">
 </head>
 <body>
 <header class="hero">
@@ -366,8 +366,25 @@
   <section id="record-score" class="view" aria-labelledby="scoreGuideTitle">
     <section class="panel score-guide">
       <span class="section-label">FOR PLAYERS · QUICK GUIDE</span>
-      <h2 id="scoreGuideTitle">How to record your match score</h2>
-      <p class="score-lead">Just finished a match? Great! Follow these steps. <strong>You will enter the result in the Google Sheet</strong> — the website is here to show you how.</p>
+      <h2 id="scoreGuideTitle">Record your match result</h2>
+      <p class="score-lead">Choose your match and enter scores here. Once the secure connection is enabled, the website will save the result directly to Google Sheets.</p>
+      <div class="score-entry-shell">
+        <div id="scoreEntryAvailability" class="score-entry-notice" role="status">Checking score submission availability…</div>
+        <form id="scoreEntryForm" class="score-entry-form" autocomplete="off">
+          <label for="scoreMatchSelect">1. Which match did you play?</label>
+          <select id="scoreMatchSelect" required><option value="">Choose your match…</option></select>
+          <div id="scoreSelectedMatch" class="score-entry-names" aria-live="polite">Choose a match to see the players' names.</div>
+          <p class="score-entry-hint">For each game, enter <strong>Player 1's points on the left</strong> and <strong>Player 2's points on the right</strong>. The first player to win three games wins the match.</p>
+          <div id="scoreGames" class="score-entry-games"></div>
+          <p id="scoreLiveWinner" class="score-entry-winner" aria-live="polite">Enter scores to calculate the winner.</p>
+          <label for="scoreEntryPin">2. Submission PIN</label>
+          <input id="scoreEntryPin" type="password" placeholder="PIN shared by the organizer" required maxlength="64" autocomplete="off">
+          <p class="score-entry-hint">This helps protect tournament results from unauthorized changes.</p>
+          <button id="scoreSubmitBtn" class="score-sheet-button score-entry-submit" type="submit" disabled>Submit result to Google Sheets</button>
+          <p id="scoreEntryFeedback" class="score-entry-feedback" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+      <details class="score-manual-help"><summary>Prefer Google Sheets? Show step-by-step instructions</summary>
 
       <div class="score-steps">
         <article class="score-step">
@@ -440,6 +457,7 @@
         <p><strong>A match was forfeited or something looks wrong?</strong> Please contact the Sports Representative rather than inventing game scores. The forfeit field is handled separately.</p>
         <p><strong>Please leave the other columns alone.</strong> In particular, don't overwrite the players' names or the automatic Set Score formula.</p>
       </div>
+      </details>
     </section>
   </section>
 
@@ -454,7 +472,7 @@
   <p>CERGE-EI Ping Pong League 2026 • Organized for the CERGE-EI community</p>
 </footer>
 
-<script src="app.js?v=20261103-schedule-guide-1"></script>
+<script src="app.js?v=20261103-direct-score-1"></script>
   <!-- Cloudflare Web Analytics --><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"cf4b67f5c23d4509a9bf91c446bc2d6f"}'></script><!-- End Cloudflare Web Analytics -->
   <!-- deploy-refresh: 2026-11-02T17:20+01:00 -->
 </body>
