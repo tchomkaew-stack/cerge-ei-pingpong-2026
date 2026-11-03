@@ -657,7 +657,124 @@ function renderOpeningMatches(){
     card(ctirad,"2nd match · Defending champion","Last season’s champion follows in the second match of opening day.")
   ].join("");
 }
-function renderAll(){renderHome();renderSchedule();renderGroups();renderStandings();renderChallenges();renderOpeningMatches();renderNotifications()}
+
+let scoreWriteEnabled=false, scoreSubmitting=false;
+function scoreMatchKey(m){return [m.group,m.p1,m.p2].join("|")}
+function matchHasResult(m){
+  return state.results.some(r=>sheetKey(r.group)===sheetKey(m.group)
+    && sheetKey(r.p1)===sheetKey(m.p1)&&sheetKey(r.p2)===sheetKey(m.p2));
+}
+function renderScoreForm(){
+  const selector=$("scoreMatchSelect");
+  if(!selector)return;
+  const previous=selector.value;
+  const matches=state.schedule.filter(m=>m.p1&&m.p2).slice()
+    .sort((a,b)=>(a.date||"").localeCompare(b.date||"")||(a.time||"").localeCompare(b.time||""));
+  const unique=new Map();
+  for(const m of matches)unique.set(scoreMatchKey(m),m);
+  scoreFormMatches=[...unique.values()];
+  selector.innerHTML='<option value="">Choose your match…</option>'+scoreFormMatches.map((m,i)=>{
+    const recorded=matchHasResult(m);
+    return '<option value="'+i+'"'+(recorded?' disabled':'')+'>'+esc('Group '+m.group+' · '+m.p1+' vs '+m.p2+(recorded?' (already recorded)':''))+'</option>';
+  }).join("");
+  if(previous!==""&&selector.querySelector('option[value="'+previous+'"]:not(:disabled)'))selector.value=previous;
+  showScoreMatch();
+}
+let scoreFormMatches=[];
+function showScoreMatch(){
+  const idx=Number($("scoreMatchSelect")?.value);
+  const m=$("scoreMatchSelect")?.value!==""?scoreFormMatches[idx]:null;
+  const names=$("scoreSelectedMatch"),games=$("scoreGames");
+  if(!names||!games)return;
+  names.textContent=m?m.p1+" (Player 1) vs "+m.p2+" (Player 2)":"Choose a match to see the players' names.";
+  if(!games.children.length){
+    games.innerHTML=[0,1,2,3,4].map(i=>'<div class="score-game-row"><span>Game '+(i+1)+'</span><input aria-label="Game '+(i+1)+' Player 1 points" type="number" min="0" max="99" inputmode="numeric" data-side="0" data-game="'+i+'" placeholder="P1"><b>–</b><input aria-label="Game '+(i+1)+' Player 2 points" type="number" min="0" max="99" inputmode="numeric" data-side="1" data-game="'+i+'" placeholder="P2"></div>').join("");
+  }
+  validateScoreForm();
+}
+function readScoreForm(){
+  const cells=[...document.querySelectorAll("#scoreGames input")];
+  const games=[];
+  let sawGap=false;
+  for(let i=0;i<5;i++){
+    const left=cells[2*i]?.value.trim()??"",right=cells[2*i+1]?.value.trim()??"";
+    if(!left&&!right){sawGap=true;continue}
+    if(sawGap)throw Error("Fill the games in order, without skipping a row.");
+    if(!left||!right)throw Error("Enter both players' points for game "+(i+1)+".");
+    const x=Number(left),y=Number(right);
+    if(!Number.isInteger(x)||!Number.isInteger(y)||x<0||y<0||x>99||y>99 ||
+      Math.max(x,y)<11 || Math.abs(x-y)<2 ||
+      (Math.max(x,y)>11 && Math.abs(x-y)!==2))
+      throw Error("Check game "+(i+1)+": win with at least 11 points, by 2.");
+    games.push([x,y]);
+  }
+  if(games.length<3)throw Error("Enter at least three completed games.");
+  let a=0,b=0;
+  for(let i=0;i<games.length;i++){
+    if(a===3||b===3)throw Error("Stop entering games once someone has won three.");
+    if(games[i][0]>games[i][1])a++;else b++;
+  }
+  if(Math.max(a,b)!==3)throw Error("The winning player must win three games.");
+  return {games,wins:[a,b]};
+}
+function validateScoreForm(){
+  const btn=$("scoreSubmitBtn"),feedback=$("scoreEntryFeedback"),winner=$("scoreLiveWinner");
+  if(!btn||!winner)return;
+  btn.disabled=true;
+  const match=$("scoreMatchSelect")?.value!==""?scoreFormMatches[Number($("scoreMatchSelect").value)]:null;
+  if(!match){winner.textContent="Choose your match first.";return}
+  try{
+    const result=readScoreForm();
+    const who=result.wins[0]===3?match.p1:match.p2;
+    winner.textContent=who+" wins "+result.wins.join("–")+" games.";
+    btn.disabled=!scoreWriteEnabled||scoreSubmitting||!$("scoreEntryPin").value.trim();
+    if(feedback&&!scoreSubmitting)feedback.textContent="";
+  }catch(e){
+    winner.textContent=e.message;
+    if(feedback&&!scoreSubmitting)feedback.textContent="";
+  }
+}
+async function checkScoreWriteAvailability(){
+  try{
+    const r=await fetch("/api/score-status",{cache:"no-store"});
+    if(!r.ok)throw Error("Unavailable");
+    scoreWriteEnabled=Boolean((await r.json()).enabled);
+  }catch{scoreWriteEnabled=false}
+  const notice=$("scoreEntryAvailability");
+  if(notice)notice.textContent=scoreWriteEnabled
+    ?"Direct score recording is available. Enter your match result below."
+    :"Direct score recording is awaiting organizer setup. Please use the Google Sheet link in the instructions below for now.";
+  if($("scoreEntryPin"))$("scoreEntryPin").disabled=!scoreWriteEnabled;
+  validateScoreForm();
+}
+async function submitScoreForm(e){
+  e.preventDefault();
+  if(scoreSubmitting||!scoreWriteEnabled)return;
+  const match=scoreFormMatches[Number($("scoreMatchSelect").value)];
+  if(!match)return;
+  let checked;
+  try{checked=readScoreForm()}catch(err){$("scoreEntryFeedback").textContent=err.message;return}
+  const pin=$("scoreEntryPin").value;
+  if(!pin){$("scoreEntryFeedback").textContent="Enter the submission PIN.";return}
+  scoreSubmitting=true;validateScoreForm();
+  $("scoreEntryFeedback").textContent="Saving to Google Sheets…";
+  try{
+    const r=await fetch("/api/submit-score",{
+      method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({group:match.group,p1:match.p1,p2:match.p2,scores:checked.games,pin})
+    });
+    const data=await r.json();
+    if(!r.ok||!data.ok)throw Error(data.error||"Could not save the result.");
+    $("scoreEntryPin").value="";
+    document.querySelectorAll("#scoreGames input").forEach(x=>x.value="");
+    $("scoreEntryFeedback").textContent="Saved! "+data.winner+" won "+data.setScore+". The standings will refresh from Google Sheets.";
+    await refreshData();
+    openView("record-score");
+  }catch(err){$("scoreEntryFeedback").textContent=err.message+" No changes were made by this form unless Google Sheets confirms saving."}
+  finally{scoreSubmitting=false;validateScoreForm()}
+}
+
+function renderAll(){renderHome();renderSchedule();renderGroups();renderStandings();renderChallenges();renderOpeningMatches();renderNotifications();renderScoreForm()}
 
 document.querySelectorAll(".tab,[data-view='record-score'],[data-view='change-schedule']").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
 $("notificationBtn")?.addEventListener("click",()=>{
@@ -682,4 +799,9 @@ $("scheduleSearch").addEventListener("input",renderSchedule);
 $("groupFilter").addEventListener("change",renderSchedule);
 $("weekFilter").addEventListener("change",renderSchedule);
 $("refreshBtn").addEventListener("click",refreshData);
+$("scoreMatchSelect")?.addEventListener("change",()=>{document.querySelectorAll("#scoreGames input").forEach(x=>x.value="");showScoreMatch()});
+$("scoreGames")?.addEventListener("input",validateScoreForm);
+$("scoreEntryPin")?.addEventListener("input",validateScoreForm);
+$("scoreEntryForm")?.addEventListener("submit",submitScoreForm);
+checkScoreWriteAvailability();
 refreshData();
