@@ -767,10 +767,10 @@ async function submitScoreForm(e){
     if(!r.ok||!data.ok)throw Error(data.error||"Could not save the result.");
     $("scoreEntryPin").value="";
     document.querySelectorAll("#scoreGames input").forEach(x=>x.value="");
-    $("scoreEntryFeedback").textContent="Saved! "+data.winner+" won "+data.setScore+". The standings will refresh from Google Sheets.";
     await refreshData();
     openView("record-score");
-  }catch(err){$("scoreEntryFeedback").textContent=err.message+" No changes were made by this form unless Google Sheets confirms saving."}
+    $("scoreEntryFeedback").textContent="Saved! "+data.winner+" won "+data.setScore+". Results and standings have been refreshed from Google Sheets.";
+  }catch(err){$("scoreEntryFeedback").textContent=err.message+" If you're unsure whether it saved, check the Google Sheet before trying again."}
   finally{scoreSubmitting=false;validateScoreForm()}
 }
 
