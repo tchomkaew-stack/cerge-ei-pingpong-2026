@@ -137,6 +137,12 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const norm=s=>String(s??"").trim();
 const num=v=>{const n=parseFloat(String(v??"").replace("%",""));return Number.isFinite(n)?n:0};
 const pct=v=>v===""||v==null?"—":(Number(v)*100).toFixed(0)+"%";
+const rateFromSheet=v=>{
+  const s=norm(v);
+  if(!s)return 0;
+  const n=num(s);
+  return s.includes("%")?n/100:n>1?n/100:n;
+};
 
 function parseCSV(text){
   const rows=[];let row=[],cell="",q=false;
@@ -312,7 +318,7 @@ function parseStandings(rows){
     .map(r=>({
       group:norm(r[g]).toUpperCase(),player:norm(r[p]),wins:num(r[w]),losses:num(r[l]),
       matches:m>=0?num(r[m]):0,
-      winRate:win>=0?num(r[win]):0,setRatio:set>=0?num(r[set]):0,
+      winRate:win>=0?rateFromSheet(r[win]):0,setRatio:set>=0?rateFromSheet(r[set]):0,
       pointDiff:pd>=0?num(r[pd]):0
     }));
 }
