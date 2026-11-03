@@ -15,10 +15,11 @@ export default {
 
       const googleUrl =
         "https://docs.google.com/spreadsheets/d/" + SHEET_ID +
-        "/gviz/tq?tqx=out:csv&sheet=" + encodeURIComponent(sheet);
+        "/gviz/tq?tqx=out:csv&sheet=" + encodeURIComponent(sheet) +
+        "&_=" + Date.now();
 
       try {
-        const upstream = await fetch(googleUrl, { headers: { "User-Agent": "Mozilla/5.0" } });
+        const upstream = await fetch(googleUrl, { cache: "no-store", headers: { "User-Agent": "Mozilla/5.0", "Cache-Control": "no-cache" } });
         const body = await upstream.text();
         const ct = upstream.headers.get("content-type") || "";
 
@@ -34,7 +35,8 @@ export default {
           status: 200,
           headers: {
             "content-type": "text/csv; charset=utf-8",
-            "cache-control": "no-store"
+            "cache-control": "no-store, max-age=0",
+            "x-tournament-source": "live-google-sheet"
           }
         });
       } catch {
