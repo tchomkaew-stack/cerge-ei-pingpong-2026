@@ -392,11 +392,11 @@ function renderNotifications(){
 function openView(view){
   const target=$(view);
   if(!target)return;
-  document.querySelectorAll(".tab,.view,[data-view='record-score']").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".tab,.view,[data-view='record-score'],[data-view='change-schedule']").forEach(x=>x.classList.remove("active"));
   const tab=document.querySelector('.tab[data-view="'+view+'"]');
   if(tab)tab.classList.add("active");
-  if(view==="record-score"){
-    document.querySelectorAll('[data-view="record-score"]').forEach(x=>x.classList.add("active"));
+  if(view==="record-score"||view==="change-schedule"){
+    document.querySelectorAll('[data-view="'+view+'"]').forEach(x=>x.classList.add("active"));
   }
   target.classList.add("active");
   closeNotifications();
@@ -659,7 +659,7 @@ function renderOpeningMatches(){
 }
 function renderAll(){renderHome();renderSchedule();renderGroups();renderStandings();renderChallenges();renderOpeningMatches();renderNotifications()}
 
-document.querySelectorAll(".tab,[data-view='record-score']").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
+document.querySelectorAll(".tab,[data-view='record-score'],[data-view='change-schedule']").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
 $("notificationBtn")?.addEventListener("click",()=>{
   const panel=$("notificationPanel");
   if(panel?.hidden)openNotifications();else closeNotifications();
