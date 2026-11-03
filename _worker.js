@@ -10,14 +10,14 @@ export default {
     }
 
     // Direct scoring is enabled only after the organizer provisions an
-    // authorized Apps Script URL, shared secret and submission PIN in Pages.
+    // authorized Apps Script URL and shared secret in Pages.
     if (url.pathname === "/api/score-status" && request.method === "GET") {
-      const configured = Boolean(env.SCORE_WRITE_URL && env.SCORE_WRITE_SECRET && env.SCORE_ENTRY_PIN);
+      const configured = Boolean(env.SCORE_WRITE_URL && env.SCORE_WRITE_SECRET);
       return Response.json({ enabled: configured }, { headers: { "cache-control": "no-store" } });
     }
 
     if (url.pathname === "/api/submit-score" && request.method === "POST") {
-      const configured = Boolean(env.SCORE_WRITE_URL && env.SCORE_WRITE_SECRET && env.SCORE_ENTRY_PIN);
+      const configured = Boolean(env.SCORE_WRITE_URL && env.SCORE_WRITE_SECRET);
       if (!configured) return Response.json({ ok: false, error: "Direct score entry has not been connected yet. Please use Google Sheets." }, { status: 503 });
       const origin = request.headers.get("origin");
       if (origin && origin !== url.origin) return Response.json({ ok: false, error: "Invalid origin" }, { status: 403 });
@@ -25,13 +25,6 @@ export default {
       try {
         const input = await request.json();
         if (!input || typeof input !== "object" || !Array.isArray(input.scores)) throw Error("Invalid submission");
-        const pin = String(input.pin || "");
-        const authorizedPin = String(env.SCORE_ENTRY_PIN);
-        // Compare in constant time; reject a missing PIN or wrong length.
-        const a = new TextEncoder().encode(pin), b = new TextEncoder().encode(authorizedPin);
-        let diff = a.length ^ b.length;
-        for (let i = 0; i < Math.max(a.length, b.length); i++) diff |= (a[i] || 0) ^ (b[i] || 0);
-        if (diff !== 0 || !pin) return Response.json({ ok: false, error: "Incorrect submission PIN." }, { status: 403 });
         if (!/^[A-G]$/.test(input.group) || typeof input.p1 !== "string" || typeof input.p2 !== "string" ||
             input.p1.length > 100 || input.p2.length > 100 || input.scores.length < 3 || input.scores.length > 5 ||
             input.scores.some(s => !Array.isArray(s) || s.length !== 2 || s.some(n => !Number.isInteger(n) || n < 0 || n > 99))) {
