@@ -390,11 +390,16 @@ function renderNotifications(){
   }).join(""):'<p class="notification-empty">No active updates right now.</p>';
 }
 function openView(view){
-  const tab=document.querySelector('.tab[data-view="'+view+'"]');
   const target=$(view);
-  if(!tab||!target)return;
-  document.querySelectorAll(".tab,.view").forEach(x=>x.classList.remove("active"));
-  tab.classList.add("active");target.classList.add("active");
+  if(!target)return;
+  document.querySelectorAll(".tab,.view,[data-view='record-score']").forEach(x=>x.classList.remove("active"));
+  const tab=document.querySelector('.tab[data-view="'+view+'"]');
+  if(tab)tab.classList.add("active");
+  if(view==="record-score"){
+    document.querySelectorAll('[data-view="record-score"]').forEach(x=>x.classList.add("active"));
+  }
+  target.classList.add("active");
+  closeNotifications();
   window.scrollTo({top:document.querySelector(".tabs")?.offsetTop||0,behavior:"smooth"});
 }
 function openNotifications(){
@@ -576,7 +581,7 @@ function renderStandings(){
   const e=eligibleByGroup();
   el.innerHTML="ABCDEFG".split("").map(g=>{
     const a=state.standings.filter(x=>x.group===g).sort(compareRank),q=new Set((e[g]||[]).slice(0,2).map(x=>x.player));
-    return `<div class="group-standing"><div class="group-title">Group ${g}</div><div class="table-wrap"><table><thead><tr><th>#</th><th>Player</th><th>W</th><th>L</th><th>P</th><th>Win%</th><th>Set%</th></tr></thead><tbody>${a.map((x,i)=>`<tr class="${q.has(x.player)?"rank-auto":""}"><td>${i+1}</td><td>${esc(x.player)} ${q.has(x.player)?'<span class="badge qual">Q</span>':""} ${x.matches>0&&x.matches<3?'<span class="badge ineligible">ineligible</span>':""}</td><td>${x.wins}</td><td>${x.losses}</td><td>${x.matches}</td><td>${pct(x.winRate)}</td><td>${pct(x.setRatio)}</td></tr>`).join("")}</tbody></table></div></div>`;
+    return `<div class="group-standing"><div class="group-title">Group ${g}</div><div class="table-wrap"><table><thead><tr><th>#</th><th>Player</th><th>W</th><th>L</th><th>P</th><th>Win%</th><th>Set%</th></tr></thead><tbody>${a.map((x,i)=>`<tr class="${q.has(x.player)?"rank-auto":""}"><td>${i+1}</td><td>${esc(x.player)} ${q.has(x.player)?'<span class="badge qual">Q</span>':""}</td><td>${x.wins}</td><td>${x.losses}</td><td>${x.matches}</td><td>${pct(x.winRate)}</td><td>${pct(x.setRatio)}</td></tr>`).join("")}</tbody></table></div></div>`;
   }).join("");
   const wc=wildcards();
   $("wildcardTable").innerHTML=`<div class="table-wrap"><table><thead><tr><th>#</th><th>Group</th><th>Player</th><th>W</th><th>P</th><th>Win%</th><th>Set%</th><th>PD</th></tr></thead><tbody>${wc.map((x,i)=>`<tr class="${i<2?"rank-wild":""}"><td>${i+1}</td><td>${x.group}</td><td>${esc(x.player)}</td><td>${x.wins}</td><td>${x.matches}</td><td>${pct(x.winRate)}</td><td>${pct(x.setRatio)}</td><td>${x.pointDiff}</td></tr>`).join("")}</tbody></table></div>`;
@@ -654,7 +659,7 @@ function renderOpeningMatches(){
 }
 function renderAll(){renderHome();renderSchedule();renderGroups();renderStandings();renderChallenges();renderOpeningMatches();renderNotifications()}
 
-document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
+document.querySelectorAll(".tab,[data-view='record-score']").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
 $("notificationBtn")?.addEventListener("click",()=>{
   const panel=$("notificationPanel");
   if(panel?.hidden)openNotifications();else closeNotifications();
