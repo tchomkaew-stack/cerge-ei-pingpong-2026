@@ -263,26 +263,58 @@ function parseSchedule(rows){
     seen.add(key);return true;
   });
 }
+function sheetKey(value){
+  return norm(value).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/\s+/g," ").trim();
+}
 function parseResults(rows){
-  const h=headerIndex(rows,r=>norm(r[0]).toLowerCase()=="week"&&norm(r[11]).toLowerCase()=="winner");
+  const h=rows.findIndex(r=>{
+    const cols=r.map(sheetKey);
+    return cols.includes("winner")&&cols.some(v=>v==="player 1"||v==="player1")
+      &&cols.some(v=>v==="player 2"||v==="player2");
+  });
   if(h<0)return[];
-  return rows.slice(h+1).filter(r=>norm(r[4])&&norm(r[5])&&norm(r[11]))
-    .map(r=>({
-      date:norm(r[1]),
-      group:norm(r[3]),
-      p1:norm(r[4]),
-      p2:norm(r[5]),
-      scores:[6,7,8,9,10].map(i=>norm(r[i])).filter(Boolean),
-      winner:norm(r[11]),
-      setScore:norm(r[12]),
-      forfeit:norm(r[13]).toUpperCase()
-    }));
+  const headers=rows[h].map(sheetKey);
+  const index=(...xs)=>headers.findIndex(v=>xs.includes(v));
+  const p1=index("player 1","player1"),p2=index("player 2","player2"),
+    winner=index("winner"),group=index("group"),date=index("date"),
+    forfeit=index("forfeit (y/n)","forfeit","forfeit y/n"),
+    setScore=index("set score (e.g. 3-1)","set score (e.g. 2-1)","set score","set score (e.g. 3–1)");
+  const scoreCols=[1,2,3,4,5].map(n=>headers.findIndex(x=>x==="score set "+n||x==="set "+n));
+  return rows.slice(h+1).filter(r=>norm(r[p1])&&norm(r[p2])).map(r=>{
+    const scores=scoreCols.map(i=>i>=0?norm(r[i]):"").filter(Boolean);
+    let w=norm(r[winner]);
+    // Sheets may contain scores before the winner formula has recalculated.
+    if(!w){
+      let aw=0,bw=0;
+      scores.forEach(s=>{const m=scorePair(s);if(m){if(m[0]>m[1])aw++;else if(m[1]>m[0])bw++;}});
+      if(aw>=3)w=norm(r[p1]);
+      else if(bw>=3)w=norm(r[p2]);
+    }
+    return {
+      date:date>=0?norm(r[date]):"",group:group>=0?norm(r[group]):"",
+      p1:norm(r[p1]),p2:norm(r[p2]),scores,
+      winner:w,setScore:setScore>=0?norm(r[setScore]):"",
+      forfeit:forfeit>=0?norm(r[forfeit]).toUpperCase():""
+    };
+  }).filter(r=>r.winner && [sheetKey(r.p1),sheetKey(r.p2)].includes(sheetKey(r.winner)));
 }
 function parseStandings(rows){
-  const h=headerIndex(rows,r=>norm(r[0]).toLowerCase()=="group"&&norm(r[1]).toLowerCase()=="player"&&norm(r[2]).toLowerCase()=="wins");
+  const h=rows.findIndex(r=>{
+    const cols=r.map(sheetKey);
+    return cols.includes("group")&&cols.includes("player")&&cols.includes("wins");
+  });
   if(h<0)return[];
-  return rows.slice(h+1).filter(r=>/^[A-G]$/.test(norm(r[0]))&&norm(r[1]))
-    .map(r=>({group:norm(r[0]),player:norm(r[1]),wins:num(r[2]),losses:num(r[3]),matches:num(r[7]),winRate:r[8]===""?"":num(r[8]),setRatio:r[10]===""?"":num(r[10]),pointDiff:r[11]===""?"":num(r[11])}));
+  const cols=rows[h].map(sheetKey);
+  const i=(...names)=>cols.findIndex(x=>names.includes(x));
+  const g=i("group"),p=i("player"),w=i("wins"),l=i("losses"),m=i("matches played","matches"),
+    win=i("win rate","win%"),set=i("set ratio","set%"),pd=i("point diff","point differential");
+  return rows.slice(h+1).filter(r=>/^[A-G]$/i.test(norm(r[g]))&&norm(r[p]))
+    .map(r=>({
+      group:norm(r[g]).toUpperCase(),player:norm(r[p]),wins:num(r[w]),losses:num(r[l]),
+      matches:m>=0?num(r[m]):0,
+      winRate:win>=0?num(r[win]):0,setRatio:set>=0?num(r[set]):0,
+      pointDiff:pd>=0?num(r[pd]):0
+    }));
 }
 function parseAnnouncements(rows){
   if(!rows?.length)return[];
@@ -379,25 +411,22 @@ function scorePair(s){
   return m?[Number(m[1]),Number(m[2])]:null;
 }
 function deriveStandings(){
-  const byPlayer=new Map(
-    state.groups.map(p=>[p.player,{
-      group:p.group,player:p.player,wins:0,losses:0,matches:0,
-      setsWon:0,setsLost:0,pointsFor:0,pointsAgainst:0,
-      winRate:0,setRatio:0,pointDiff:-999
-    }])
-  );
-
+  const byPlayer=new Map(state.groups.map(p=>[sheetKey(p.player),{
+    group:p.group,player:p.player,wins:0,losses:0,matches:0,
+    setsWon:0,setsLost:0,pointsFor:0,pointsAgainst:0,
+    winRate:0,setRatio:0,pointDiff:-999
+  }]));
   for(const r of state.results){
-    const a=byPlayer.get(r.p1),b=byPlayer.get(r.p2);
-    if(!a||!b)continue;
-
+    const a=byPlayer.get(sheetKey(r.p1)),b=byPlayer.get(sheetKey(r.p2));
+    if(!a||!b||a===b)continue;
+    const winner=sheetKey(r.winner);
+    if(winner!==sheetKey(r.p1)&&winner!==sheetKey(r.p2))continue;
     a.matches++;b.matches++;
-    if(r.winner===r.p1){a.wins++;b.losses++}
-    else if(r.winner===r.p2){b.wins++;a.losses++}
-
+    if(winner===sheetKey(r.p1)){a.wins++;b.losses++}
+    else{b.wins++;a.losses++}
     if(r.forfeit!=="Y"){
-      for(const raw of r.scores||[]){
-        const pair=scorePair(raw);
+      for(const s of r.scores){
+        const pair=scorePair(s);
         if(!pair)continue;
         const [x,y]=pair;
         a.pointsFor+=x;a.pointsAgainst+=y;
@@ -407,12 +436,11 @@ function deriveStandings(){
       }
     }
   }
-
   for(const x of byPlayer.values()){
     x.winRate=x.matches?x.wins/x.matches:0;
-    const totalSets=x.setsWon+x.setsLost;
-    x.setRatio=totalSets?x.setsWon/totalSets:0;
-    x.pointDiff=(x.pointsFor||x.pointsAgainst)?x.pointsFor-x.pointsAgainst:-999;
+    const sets=x.setsWon+x.setsLost;
+    x.setRatio=sets?x.setsWon/sets:0;
+    x.pointDiff=x.pointsFor+x.pointsAgainst?x.pointsFor-x.pointsAgainst:-999;
   }
   return [...byPlayer.values()];
 }
@@ -463,9 +491,17 @@ async function refreshData(){
     state.schedule=FALLBACK_SCHEDULE;
     scheduleFallbackUsed=true;
   }
-  if(loaded["Results recording"]) state.results=parseResults(loaded["Results recording"]);
+  if(loaded["Results recording"])state.results=parseResults(loaded["Results recording"]);
   const sheetStandings=loaded["Standing"]?parseStandings(loaded["Standing"]):[];
-  state.standings=state.groups.length?deriveStandings():sheetStandings;
+  const calculated=state.groups.length?deriveStandings():[];
+  // The Standing tab is already formula-driven; prefer it when it contains
+  // recorded matches, but retain a score-derived fallback for recalculation delays.
+  const sheetHasMatches=sheetStandings.some(x=>x.matches>0||x.wins>0);
+  const calculatedHasMatches=calculated.some(x=>x.matches>0);
+  state.standings=sheetHasMatches && (!calculatedHasMatches ||
+    sheetStandings.reduce((n,x)=>n+x.matches,0)>=calculated.reduce((n,x)=>n+x.matches,0))
+    ?sheetStandings:calculated.length?calculated:sheetStandings;
+  if(state.standings.length===0 && sheetStandings.length)state.standings=sheetStandings;
   const sheetAnnouncements=announcementsLoaded?parseAnnouncements(loaded["Announcements"]):[];
   const mergedAnnouncements=[...FALLBACK_ANNOUNCEMENTS];
   for(const a of sheetAnnouncements){
@@ -475,6 +511,12 @@ async function refreshData(){
   state.announcements=mergedAnnouncements;
 
   const coreOk=state.groups.length>0 && state.schedule.length>0;
+  const recordedMatches=state.results.length;
+  status.dataset.results=String(recordedMatches);
+  status.dataset.standings=String(state.standings.length);
+  if(state.groups.length && !recordedMatches && !sheetHasMatches && loaded["Results recording"]){
+    status.title="No completed results detected in live Results recording sheet";
+  }
   if(coreOk && errors.length===0 && !scheduleFallbackUsed){
     status.textContent="Live updates";
     status.className="status-pill live";
