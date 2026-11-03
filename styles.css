@@ -969,3 +969,30 @@ footer::before{
   .schedule-example-arrow{transform:rotate(90deg);line-height:1.1}
   .schedule-example-state{padding:12px}
 }
+
+/* Direct score entry embedded in the existing Record Score page */
+.score-entry-shell{margin:20px 0;padding:20px;border-radius:17px;border:1px solid #d8e2ee;background:#fff;box-shadow:0 8px 28px rgba(12,35,64,.05)}
+.score-entry-notice{border-radius:10px;padding:12px 14px;background:#f1f5fa;color:#33496a;font-weight:700;font-size:.92rem;line-height:1.45;margin-bottom:17px}
+.score-entry-form{display:grid;gap:12px}
+.score-entry-form label{font-weight:850;color:var(--navy)}
+.score-entry-form select,.score-entry-form>input{width:100%;min-height:45px;border:1px solid #cbd7e4;border-radius:10px;padding:10px 12px;background:#fff;color:var(--ink);font:inherit}
+.score-entry-names{padding:12px;border-radius:10px;background:#f5f8fb;color:var(--navy);font-weight:800;line-height:1.5}
+.score-entry-hint{font-size:.9rem;line-height:1.55;margin:0 0 6px!important}
+.score-entry-games{display:grid;gap:8px;margin:3px 0 9px}
+.score-game-row{display:grid;grid-template-columns:minmax(62px,1fr) minmax(70px,100px) 16px minmax(70px,100px);justify-content:start;align-items:center;gap:9px;padding:8px 12px;border:1px solid #e5eaf1;background:#fafbfd;border-radius:10px}
+.score-game-row>span{font-weight:800;font-size:.88rem;color:#516078}
+.score-game-row>input{width:100%;min-width:0;min-height:43px;text-align:center;font:inherit;font-weight:800;color:var(--navy);border:1px solid #d1dce8;border-radius:9px;background:#fff}
+.score-game-row>b{text-align:center;color:var(--muted)}
+.score-entry-winner{font-weight:800!important;color:var(--navy)!important;background:#f5f8fb;border-radius:10px;padding:12px!important;margin:0!important}
+.score-entry-submit{border:0;cursor:pointer;font:inherit;justify-self:start}
+.score-entry-submit:disabled{opacity:.5;cursor:not-allowed}
+.score-entry-feedback{font-weight:750;margin:0!important;color:var(--navy)!important;min-height:1em}
+.score-manual-help{margin-top:23px;border-top:1px solid #e3e9f0;padding-top:20px}
+.score-manual-help>summary{cursor:pointer;font-weight:850;color:var(--navy);padding:10px 0}
+.score-manual-help .score-steps{margin-top:17px}
+@media(max-width:600px){
+ .score-entry-shell{padding:13px}
+ .score-game-row{gap:6px;padding:8px;grid-template-columns:minmax(56px,1fr) minmax(52px,76px) 10px minmax(52px,76px)}
+ .score-game-row>input{min-height:42px}
+ .score-entry-submit{width:100%}
+}
