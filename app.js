@@ -675,21 +675,46 @@ function renderScoreForm(){
   scoreFormMatches=[...unique.values()];
   selector.innerHTML='<option value="">Choose your match…</option>'+scoreFormMatches.map((m,i)=>{
     const recorded=matchHasResult(m);
-    return '<option value="'+i+'"'+(recorded?' disabled':'')+'>'+esc('Group '+m.group+' · '+m.p1+' vs '+m.p2+(recorded?' (already recorded)':''))+'</option>';
+    return '<option value="'+i+'">'+esc('Group '+m.group+' · '+m.p1+' vs '+m.p2+(recorded?' (recorded — can replace)':''))+'</option>';
   }).join("");
-  if(previous!==""&&selector.querySelector('option[value="'+previous+'"]:not(:disabled)'))selector.value=previous;
+  if(previous!==""&&selector.querySelector('option[value="'+previous+'"]'))selector.value=previous;
   showScoreMatch();
 }
 let scoreFormMatches=[];
+function selectedScoreMatch(){
+  const v=$("scoreMatchSelect")?.value;
+  return v!=="" && v!=null ? scoreFormMatches[Number(v)] : null;
+}
+function scoreEntryIsForfeit(){return $("scoreResultType")?.value==="forfeit"}
 function showScoreMatch(){
-  const idx=Number($("scoreMatchSelect")?.value);
-  const m=$("scoreMatchSelect")?.value!==""?scoreFormMatches[idx]:null;
+  const m=selectedScoreMatch();
   const names=$("scoreSelectedMatch"),games=$("scoreGames");
   if(!names||!games)return;
   names.textContent=m?m.p1+" (Player 1) vs "+m.p2+" (Player 2)":"Choose a match to see the players' names.";
+  const recorded=m&&state.results.find(r=>sheetKey(r.group)===sheetKey(m.group)
+    && sheetKey(r.p1)===sheetKey(m.p1)&&sheetKey(r.p2)===sheetKey(m.p2));
+  const existing=$("scoreExistingResult");
+  if(existing){
+    existing.hidden=!recorded;
+    existing.textContent=recorded
+      ?"Already recorded: "+recorded.winner+" won"+(recorded.forfeit==="Y"?" by forfeit":recorded.setScore?" "+recorded.setScore:"")+". Submitting again will replace this result."
+      :"";
+  }
+  const forfeitWinner=$("scoreForfeitWinner");
+  if(forfeitWinner){
+    forfeitWinner.innerHTML='<option value="">Choose the winner…</option>'+
+      (m?'<option value="p1">'+esc(m.p1)+'</option><option value="p2">'+esc(m.p2)+'</option>':"");
+    forfeitWinner.value="";
+  }
   if(!games.children.length){
     games.innerHTML=[0,1,2,3,4].map(i=>'<div class="score-game-row"><span>Game '+(i+1)+'</span><input aria-label="Game '+(i+1)+' Player 1 points" type="number" min="0" max="99" inputmode="numeric" data-side="0" data-game="'+i+'" placeholder="P1"><b>–</b><input aria-label="Game '+(i+1)+' Player 2 points" type="number" min="0" max="99" inputmode="numeric" data-side="1" data-game="'+i+'" placeholder="P2"></div>').join("");
   }
+  updateScoreEntryType();
+}
+function updateScoreEntryType(){
+  const forfeit=scoreEntryIsForfeit();
+  if($("scoreNormalFields"))$("scoreNormalFields").hidden=forfeit;
+  if($("scoreForfeitFields"))$("scoreForfeitFields").hidden=!forfeit;
   validateScoreForm();
 }
 function readScoreForm(){
@@ -721,12 +746,21 @@ function validateScoreForm(){
   const btn=$("scoreSubmitBtn"),feedback=$("scoreEntryFeedback"),winner=$("scoreLiveWinner");
   if(!btn||!winner)return;
   btn.disabled=true;
-  const match=$("scoreMatchSelect")?.value!==""?scoreFormMatches[Number($("scoreMatchSelect").value)]:null;
+  const match=selectedScoreMatch();
   if(!match){winner.textContent="Choose your match first.";return}
   try{
-    const result=readScoreForm();
-    const who=result.wins[0]===3?match.p1:match.p2;
-    winner.textContent=who+" wins "+result.wins.join("–")+" games.";
+    let who,summary;
+    if(scoreEntryIsForfeit()){
+      const side=$("scoreForfeitWinner")?.value;
+      if(side!=="p1"&&side!=="p2")throw Error("Choose who wins by forfeit.");
+      who=side==="p1"?match.p1:match.p2;
+      summary=who+" wins by forfeit. No games or points awarded.";
+    }else{
+      const result=readScoreForm();
+      who=result.wins[0]===3?match.p1:match.p2;
+      summary=who+" wins "+result.wins.join("–")+" games.";
+    }
+    winner.textContent=summary;
     btn.disabled=!scoreWriteEnabled||scoreSubmitting;
     if(feedback&&!scoreSubmitting)feedback.textContent="";
   }catch(e){
@@ -749,23 +783,42 @@ async function checkScoreWriteAvailability(){
 async function submitScoreForm(e){
   e.preventDefault();
   if(scoreSubmitting||!scoreWriteEnabled)return;
-  const match=scoreFormMatches[Number($("scoreMatchSelect").value)];
+  const match=selectedScoreMatch();
   if(!match)return;
-  let checked;
-  try{checked=readScoreForm()}catch(err){$("scoreEntryFeedback").textContent=err.message;return}
+  const forfeit=scoreEntryIsForfeit();
+  let payload={group:match.group,p1:match.p1,p2:match.p2,forfeit};
+  let summary;
+  try{
+    if(forfeit){
+      const side=$("scoreForfeitWinner")?.value;
+      if(side!=="p1"&&side!=="p2")throw Error("Choose who wins by forfeit.");
+      payload.winner=side==="p1"?match.p1:match.p2;
+      summary=payload.winner+" wins by forfeit";
+    }else{
+      const checked=readScoreForm();
+      payload.scores=checked.games;
+      summary=(checked.wins[0]===3?match.p1:match.p2)+" wins "+checked.wins.join("–");
+    }
+  }catch(err){$("scoreEntryFeedback").textContent=err.message;return}
+  const existing=matchHasResult(match);
+  if(!window.confirm((existing?"Replace the existing result?\n\n":"Submit this result?\n\n")+
+    match.p1+" vs "+match.p2+"\n"+summary+
+    (existing?"\n\nThe previous result will be overwritten.":"")))return;
   scoreSubmitting=true;validateScoreForm();
   $("scoreEntryFeedback").textContent="Saving to Google Sheets…";
   try{
     const r=await fetch("/api/submit-score",{
       method:"POST",headers:{"content-type":"application/json"},
-      body:JSON.stringify({group:match.group,p1:match.p1,p2:match.p2,scores:checked.games})
+      body:JSON.stringify(payload)
     });
     const data=await r.json();
     if(!r.ok||!data.ok)throw Error(data.error||"Could not save the result.");
     document.querySelectorAll("#scoreGames input").forEach(x=>x.value="");
     await refreshData();
     openView("record-score");
-    $("scoreEntryFeedback").textContent="Saved! "+data.winner+" won "+data.setScore+". Results and standings have been refreshed from Google Sheets.";
+    $("scoreEntryFeedback").textContent="Saved! "+data.winner+
+      (data.forfeit?" won by forfeit.":" won "+data.setScore+".")+
+      " The result and standings have been refreshed from Google Sheets.";
   }catch(err){$("scoreEntryFeedback").textContent=err.message+" If you're unsure whether it saved, check the Google Sheet before trying again."}
   finally{scoreSubmitting=false;validateScoreForm()}
 }
@@ -797,6 +850,8 @@ $("weekFilter").addEventListener("change",renderSchedule);
 $("refreshBtn").addEventListener("click",refreshData);
 $("scoreMatchSelect")?.addEventListener("change",()=>{document.querySelectorAll("#scoreGames input").forEach(x=>x.value="");showScoreMatch()});
 $("scoreGames")?.addEventListener("input",validateScoreForm);
+$("scoreResultType")?.addEventListener("change",updateScoreEntryType);
+$("scoreForfeitWinner")?.addEventListener("change",validateScoreForm);
 $("scoreEntryForm")?.addEventListener("submit",submitScoreForm);
 checkScoreWriteAvailability();
 refreshData();
