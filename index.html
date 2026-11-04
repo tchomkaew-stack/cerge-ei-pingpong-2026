@@ -367,15 +367,28 @@
     <section class="panel score-guide">
       <span class="section-label">FOR PLAYERS · QUICK GUIDE</span>
       <h2 id="scoreGuideTitle">Record your match result</h2>
-      <p class="score-lead">Choose your match and enter scores here. Once the secure connection is enabled, the website will save the result directly to Google Sheets.</p>
+      <p class="score-lead">Choose your match and enter the game scores or a forfeit winner. You can submit again to correct a result; the new result replaces the previous one in Google Sheets.</p>
       <div class="score-entry-shell">
         <div id="scoreEntryAvailability" class="score-entry-notice" role="status">Checking score submission availability…</div>
         <form id="scoreEntryForm" class="score-entry-form" autocomplete="off">
           <label for="scoreMatchSelect">1. Which match did you play?</label>
           <select id="scoreMatchSelect" required><option value="">Choose your match…</option></select>
           <div id="scoreSelectedMatch" class="score-entry-names" aria-live="polite">Choose a match to see the players' names.</div>
-          <p class="score-entry-hint">For each game, enter <strong>Player 1's points on the left</strong> and <strong>Player 2's points on the right</strong>. The first player to win three games wins the match.</p>
-          <div id="scoreGames" class="score-entry-games"></div>
+          <p id="scoreExistingResult" class="score-entry-existing" hidden></p>
+          <label for="scoreResultType">2. What happened in the match?</label>
+          <select id="scoreResultType">
+            <option value="normal">Match played — enter game scores</option>
+            <option value="forfeit">Forfeit / walkover — choose winner</option>
+          </select>
+          <div id="scoreNormalFields">
+            <p class="score-entry-hint">Enter <strong>Player 1's points on the left</strong> and <strong>Player 2's points on the right</strong>. The first player to win three games wins the match automatically.</p>
+            <div id="scoreGames" class="score-entry-games"></div>
+          </div>
+          <div id="scoreForfeitFields" hidden>
+            <label for="scoreForfeitWinner">Who wins by forfeit?</label>
+            <select id="scoreForfeitWinner"><option value="">Choose the winner…</option></select>
+            <p class="score-entry-hint">A forfeit counts as one win and one loss, but awards no games or points. Do not invent scores.</p>
+          </div>
           <p id="scoreLiveWinner" class="score-entry-winner" aria-live="polite">Enter scores to calculate the winner.</p>
           <button id="scoreSubmitBtn" class="score-sheet-button score-entry-submit" type="submit" disabled>Submit result to Google Sheets</button>
           <p id="scoreEntryFeedback" class="score-entry-feedback" role="status" aria-live="polite"></p>
@@ -451,7 +464,7 @@
 
       <div class="score-help">
         <p><strong>On a phone?</strong> The Google Sheet is wide, so scroll sideways to find columns G–M. The Google Sheets app may make editing easier.</p>
-        <p><strong>A match was forfeited or something looks wrong?</strong> Please contact the Sports Representative rather than inventing game scores. The forfeit field is handled separately.</p>
+        <p><strong>A match was forfeited or a result needs correcting?</strong> Use the Forfeit option on this page and choose the winner. If a recorded result is incorrect, you can submit the same match again to replace it.</p>
         <p><strong>Please leave the other columns alone.</strong> In particular, don't overwrite the players' names or the automatic Set Score formula.</p>
       </div>
       </details>
@@ -469,7 +482,7 @@
   <p>CERGE-EI Ping Pong League 2026 • Organized for the CERGE-EI community</p>
 </footer>
 
-<script src="app.js?v=20261103-public-score-2"></script>
+<script src="app.js?v=20261104-forfeit-replace-1"></script>
   <!-- Cloudflare Web Analytics --><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"cf4b67f5c23d4509a9bf91c446bc2d6f"}'></script><!-- End Cloudflare Web Analytics -->
   <!-- deploy-refresh: 2026-11-02T17:20+01:00 -->
 </body>
