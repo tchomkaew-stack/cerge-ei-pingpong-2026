@@ -24,11 +24,22 @@ export default {
       if ((Number(request.headers.get("content-length")) || 0) > 5000) return Response.json({ ok: false, error: "Submission too large" }, { status: 413 });
       try {
         const input = await request.json();
-        if (!input || typeof input !== "object" || !Array.isArray(input.scores)) throw Error("Invalid submission");
-        if (!/^[A-G]$/.test(input.group) || typeof input.p1 !== "string" || typeof input.p2 !== "string" ||
-            input.p1.length > 100 || input.p2.length > 100 || input.scores.length < 3 || input.scores.length > 5 ||
-            input.scores.some(s => !Array.isArray(s) || s.length !== 2 || s.some(n => !Number.isInteger(n) || n < 0 || n > 99))) {
-          return Response.json({ ok: false, error: "Invalid match or scores." }, { status: 400 });
+        if (!input || typeof input !== "object" || Array.isArray(input) ||
+            !/^[A-G]$/.test(input.group) || typeof input.p1 !== "string" ||
+            typeof input.p2 !== "string" || input.p1.length > 100 || input.p2.length > 100) {
+          return Response.json({ ok: false, error: "Invalid match." }, { status: 400 });
+        }
+        const forfeit = input.forfeit === true;
+        if (forfeit) {
+          if (typeof input.winner !== "string" ||
+              ![input.p1, input.p2].includes(input.winner) ||
+              (input.scores && input.scores.length)) {
+            return Response.json({ ok: false, error: "Choose a valid forfeit winner; do not enter game scores." }, { status: 400 });
+          }
+        } else if (!Array.isArray(input.scores) || input.scores.length < 3 || input.scores.length > 5 ||
+            input.scores.some(s => !Array.isArray(s) || s.length !== 2 ||
+              s.some(n => !Number.isInteger(n) || n < 0 || n > 99))) {
+          return Response.json({ ok: false, error: "Invalid game scores." }, { status: 400 });
         }
         const target = String(env.SCORE_WRITE_URL);
         if (!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(target)) throw Error("Invalid write endpoint");
@@ -37,7 +48,9 @@ export default {
           headers: { "content-type": "text/plain;charset=UTF-8" },
           body: JSON.stringify({
             secret: String(env.SCORE_WRITE_SECRET),
-            group: input.group, p1: input.p1, p2: input.p2, scores: input.scores
+            group: input.group, p1: input.p1, p2: input.p2, forfeit,
+            winner: forfeit ? input.winner : undefined,
+            scores: forfeit ? [] : input.scores
           }),
           redirect: "follow"
         });
@@ -47,7 +60,7 @@ export default {
         if (!upstream.ok || !result.ok) {
           return Response.json({ ok: false, error: result.error || "Google Sheets could not save the match." }, { status: upstream.ok ? 400 : 502 });
         }
-        return Response.json({ ok: true, winner: result.winner, setScore: result.setScore }, { headers: { "cache-control": "no-store" } });
+        return Response.json({ ok: true, winner: result.winner, setScore: result.setScore, forfeit: Boolean(result.forfeit) }, { headers: { "cache-control": "no-store" } });
       } catch (e) {
         return Response.json({ ok: false, error: String(e.message || e) }, { status: 400 });
       }
