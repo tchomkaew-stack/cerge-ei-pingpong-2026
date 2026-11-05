@@ -1098,3 +1098,229 @@ button:focus-visible,a:focus-visible{outline:3px solid #d7b269;outline-offset:3p
   .season-chip{font-size:.58rem}
   .hero-prague-art{right:-235px}
 }
+
+/* === Design refinement: consistent, quiet CERGE-EI visual language === */
+:root{
+  --ui-radius:14px;
+  --ui-radius-small:10px;
+  --ui-border:#e0e6ee;
+  --ui-soft:#f7f9fc;
+  --ui-shadow:0 3px 14px rgba(15,35,64,.035);
+}
+/* Header: the Prague drawing is the only decoration; title and history stay clear. */
+.hero{background:linear-gradient(115deg,#0d294b 0%,#163a64 100%)}
+.hero::after{display:none}
+.hero-court{opacity:.075}
+.hero::before{opacity:.45}
+.hero-inner{padding:36px 24px 34px;gap:28px}
+.hero-copy{flex:1 1 0;min-width:0;max-width:750px}
+.hero-title-row{gap:12px;margin-top:8px}
+.hero-title-row h1{line-height:.99;overflow-wrap:normal}
+.hero-title-row h1 span{font-size:clamp(2rem,4.1vw,3.5rem)}
+.hero-title-row h1 strong{font-size:clamp(2.3rem,4.8vw,4.2rem)}
+.season-chip{background:transparent;border-color:rgba(255,255,255,.23);color:#dce6f2}
+.tagline{margin-top:12px;color:#dce6f2;font-size:.93rem;font-weight:550}
+.hero-prague-art{right:-24px;bottom:-15px;opacity:.13;width:min(58vw,690px)}
+.hero-side{gap:0;flex:0 0 auto}
+.hall-of-fame{
+  width:224px;padding:12px 14px;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:var(--ui-radius);
+  background:rgba(10,29,53,.57);
+  box-shadow:none;backdrop-filter:blur(3px);
+}
+.hof-title{color:#e7cf9c}
+.hof-row{grid-template-columns:39px minmax(0,1fr) auto;gap:6px}
+.hof-row strong{overflow-wrap:anywhere}
+.hof-crown{color:#e7cf9c}
+.hof-pending .hof-crown{color:#b9c4d1}
+
+/* Content rhythm: the player search is the one clearly elevated panel. */
+main{padding-top:26px;padding-bottom:28px}
+.panel{
+  border-color:var(--ui-border);
+  border-radius:var(--ui-radius);
+  padding:22px;
+  margin-bottom:18px;
+  box-shadow:var(--ui-shadow);
+}
+.panel h2{letter-spacing:-.018em}
+.section-heading h2::after,.panel>h2::after{display:none}
+.section-heading{margin-bottom:12px}
+.section-heading p{margin:5px 0 0}
+.player-finder{
+  padding:26px 28px;
+  background:#fff;
+  border-color:#d3deea;
+  box-shadow:0 7px 25px rgba(15,35,64,.065);
+}
+.player-finder::after{display:none}
+.finder-copy h2{margin:5px 0 4px}
+.finder-copy p{margin-bottom:15px}
+.search-hero{border-radius:var(--ui-radius-small);box-shadow:none}
+.search-hero:focus{box-shadow:0 0 0 3px rgba(181,18,59,.08)}
+.player-finder .finder-schedule-note{
+  position:relative;z-index:1;
+  margin:11px 0 0;
+  max-width:760px;
+  font-size:.78rem;line-height:1.55;color:#69788a;
+}
+.finder-schedule-note strong{color:#43566f;font-weight:750}
+.stat-grid{margin:0 0 18px;gap:12px}
+.stat-card{
+  border-color:var(--ui-border);
+  border-radius:var(--ui-radius);
+  box-shadow:none;
+}
+.stat-card::after{display:none}
+.stat-card strong{font-variant-numeric:tabular-nums}
+.tournament-progress{padding:22px}
+.progress-track{height:9px;margin:12px 0 17px}
+.progress-fill,.group-progress-track>div{background:var(--crimson)}
+.group-progress-track{height:5px}
+.two-col{gap:18px}
+.home-columns .panel{margin-bottom:18px}
+.qualification-strip{
+  border-left:3px solid var(--crimson);
+  background:#fff;box-shadow:var(--ui-shadow);
+}
+
+/* One consistent card system across match, group, result, history and stats. */
+.match-card,.result-card,.rematch-feature-card,
+.group-card,.group-standing,.player-summary,.qual-item{
+  border:1px solid var(--ui-border);
+  border-radius:var(--ui-radius);
+  background:#fff;
+  box-shadow:none;
+}
+.match-card,.result-card{padding:14px 15px}
+.match-card:hover,.result-card:hover{
+  border-color:#c5d2e1;box-shadow:0 4px 14px rgba(15,35,64,.045);
+}
+.match-card::before{top:13px;bottom:13px;width:2px}
+.match-main{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}
+.match-main span{min-width:0;overflow-wrap:anywhere}
+.match-main b,.rematch-feature-players span{
+  color:var(--crimson-2);background:#fbedf1;
+}
+.rematch-feature-card{padding:17px}
+.rematch-feature-players strong{overflow-wrap:anywhere}
+.rematch-history{background:var(--ui-soft);border-color:var(--ui-border)}
+.rematch-tag{background:#f0edf5;color:#5b4a70}
+.group-card,.group-standing{overflow:hidden}
+.group-card h3,.group-title{
+  background:var(--navy);
+  border:0;
+  color:#fff;
+}
+.group-card{box-shadow:none}
+.role{background:#f1f4f8}
+.player-summary{background:var(--ui-soft)}
+.player-summary-stats span{border-radius:var(--ui-radius-small)}
+.featured-rematches .section-heading{margin-bottom:15px}
+.rematch-feature-grid{gap:12px}
+.score-entry-shell{border-radius:var(--ui-radius);box-shadow:var(--ui-shadow)}
+.schedule-priority-line{
+  margin:0 0 16px;
+  padding:11px 14px;
+  border-left:2px solid #b8c6d7;
+  border-radius:0 var(--ui-radius-small) var(--ui-radius-small) 0;
+  background:var(--ui-soft);
+  font-size:.86rem;line-height:1.55;
+}
+.room-priority-note{border-radius:var(--ui-radius-small)}
+
+/* Navigation and interaction: stable touch targets, clearer active state. */
+.tabs{gap:3px;scroll-padding-inline:12px}
+.tab{
+  min-height:44px;
+  padding:10px 14px;
+  border-radius:var(--ui-radius-small);
+  font-weight:700;
+  scroll-snap-align:start;
+}
+.tab.active{box-shadow:none}
+.nav-action{border-radius:var(--ui-radius-small)}
+.secondary-btn{min-height:42px;border-radius:var(--ui-radius-small)}
+.notification-btn{flex-shrink:0}
+.search,select{max-width:100%}
+.table-wrap{overscroll-behavior-x:contain}
+.player-row{min-width:0}
+.player-row>span:first-child{min-width:0;overflow-wrap:anywhere}
+.role{flex-shrink:0}
+.match-action-row{gap:8px}
+.mini-action{min-height:38px}
+.view{min-width:0}
+footer{line-height:1.5}
+
+/* Tablet: no cramped hero, cards remain readable. */
+@media(max-width:1000px){
+  .hero-prague-art{right:-80px;width:min(70vw,630px);opacity:.12}
+}
+@media(max-width:850px){
+  .hero-inner{padding:31px 22px 28px;gap:14px}
+  .hero-side{width:100%;justify-content:flex-start}
+  .hall-of-fame{width:min(100%,390px)}
+  .hero-prague-art{right:-130px;bottom:0;opacity:.11}
+  .tabs{scroll-snap-type:x proximity}
+  .mobile-actions{
+    bottom:max(10px,env(safe-area-inset-bottom));
+    left:max(10px,env(safe-area-inset-left));
+    right:max(10px,env(safe-area-inset-right));
+    border-radius:var(--ui-radius);
+  }
+  body{padding-bottom:calc(82px + env(safe-area-inset-bottom))}
+  .mobile-actions button{min-height:46px}
+}
+/* Phones: fewer stacked ornaments, easy-to-scan results, no clipped names. */
+@media(max-width:560px){
+  .hero-inner{padding:25px 17px 22px;gap:10px}
+  .hero-kicker{font-size:.63rem;letter-spacing:.1em}
+  .hero-title-row{gap:8px;align-items:center}
+  .hero-title-row h1 span{font-size:clamp(1.7rem,7vw,2.25rem)}
+  .hero-title-row h1 strong{font-size:clamp(1.9rem,7.7vw,2.5rem)}
+  .season-chip{min-height:26px;padding:4px 7px;font-size:.59rem;margin-bottom:1px}
+  .tagline{font-size:.81rem;margin-top:9px}
+  .hero-prague-art{width:360px;right:-188px;bottom:20px;opacity:.085}
+  .hall-of-fame{width:100%;padding:10px 12px}
+  .hof-row{grid-template-columns:37px minmax(0,1fr) auto;gap:6px}
+  .hof-crown{grid-column:auto;font-size:.6rem}
+  main{padding:16px 12px 24px}
+  .panel{padding:16px;margin-bottom:14px;border-radius:var(--ui-radius)}
+  .player-finder{padding:20px 17px}
+  .finder-copy h2{font-size:1.55rem}
+  .finder-copy p{font-size:.87rem}
+  .search-hero{min-height:50px;font-size:1rem}
+  .stat-grid{gap:8px;margin-bottom:14px}
+  .compact-stats .stat-card{padding:11px 12px}
+  .stat-card{flex-direction:column;align-items:flex-start;gap:4px}
+  .stat-card span{font-size:.72rem}
+  .stat-card strong{font-size:1.45rem}
+  .tournament-progress{padding:17px}
+  .section-heading{gap:8px}
+  .match-main{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:6px;font-size:.85rem}
+  .match-main b{justify-self:center;padding:3px 5px}
+  .match-main span:last-child{text-align:right}
+  .match-meta{font-size:.7rem;letter-spacing:0}
+  .rematch-feature-players{font-size:.86rem}
+  .rematch-feature-card{padding:14px}
+  .tabs{padding:7px 9px}
+  .tab{padding:10px 12px;font-size:.85rem}
+  .mobile-actions{gap:7px;padding:7px}
+  .mobile-actions button{font-size:.81rem;padding:10px 7px}
+  .player-row{gap:8px}
+  .role{font-size:.67rem;padding:3px 6px}
+  .room-priority-note,.schedule-priority-line{font-size:.82rem}
+}
+@media(max-width:360px){
+  .hero-title-row h1 span{font-size:1.57rem}
+  .hero-title-row h1 strong{font-size:1.8rem}
+  .hero-title-row{gap:6px}
+  .season-chip{font-size:.55rem}
+  .match-main{font-size:.79rem}
+  .hero-prague-art{right:-210px}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}
+}
