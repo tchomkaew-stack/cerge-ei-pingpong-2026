@@ -608,11 +608,12 @@ function renderPlayerDashboard(players){
   const played=matches.filter(m=>Boolean(resultForMatch(m))).length;
   const standing=state.standings.find(x=>sheetKey(x.player)===sheetKey(player));
   const group=state.groups.find(x=>x.player===player)?.group||matches[0]?.group||"";
-  const currentTop=played>=3&&(eligibleByGroup()[group]||[]).slice(0,2).some(x=>sheetKey(x.player)===sheetKey(player));
-  const inWildcard=played>=3&&wildcards().slice(0,2).some(x=>sheetKey(x.player)===sheetKey(player));
+  const e=eligibleByGroup(),wc=wildcards();
+  const status=played>=3?qualificationStatus({player},e[group]||[],wc):"";
   const qualification=played<3?played+" of 3 matches played toward knockout eligibility":
-    currentTop?"Currently in an automatic qualifying position":
-    inWildcard?"Currently in a wildcard qualifying position":"Knockout minimum reached · standings still evolving";
+    status==="Tie — decision pending"?status:
+    status==="Automatic position"?"Currently in an automatic qualifying position":
+    status==="Wildcard position"?"Currently in a wildcard qualifying position":"Knockout minimum reached · standings still evolving";
   el.innerHTML='<div class="player-summary"><div class="player-summary-head"><div><span class="section-label">YOUR TOURNAMENT</span><h3>'+esc(player)+'</h3><p>Group '+esc(group)+' · '+esc(qualification)+'</p></div>'+
     '<span class="player-match-counter">'+played+'/'+matches.length+' matches</span></div>'+
     '<div class="player-summary-stats"><span><strong>'+(standing?.wins??0)+'</strong> wins</span><span><strong>'+(standing?.losses??0)+'</strong> losses</span>'+
@@ -954,17 +955,23 @@ function renderStandings(){
   const e=eligibleByGroup();
   const all=new Set(state.schedule.map(m=>pairKey(m.group,m.p1,m.p2)));
   const recorded=new Set(state.results.map(r=>pairKey(r.group,r.p1,r.p2)));
-  const finished=all.size>0&&[...all].every(k=>recorded.has(k));
-  $("qualifiersTitle").textContent=finished?"Round of 16 field":"Projected Round of 16 field";
-  $("qualifiersNote").textContent=finished?"Based on all recorded group-stage results.":"Current positions only — qualification is not yet final.";
-  el.innerHTML="ABCDEFG".split("").map(g=>{
-    const a=state.standings.filter(x=>x.group===g).sort(compareRank),q=new Set((e[g]||[]).slice(0,2).map(x=>x.player));
-    return `<div class="group-standing"><div class="group-title">Group ${g}</div><div class="table-wrap"><table><thead><tr><th>#</th><th>Player</th><th title="Wins">W</th><th title="Losses">L</th><th title="Matches played">P</th><th title="Win rate">Win%</th><th title="Share of games won">Set%</th><th>KO eligibility</th></tr></thead><tbody>${a.map((x,i)=>`<tr class="${q.has(x.player)?"rank-auto":""}"><td>${i+1}</td><td>${esc(x.player)} ${q.has(x.player)?(finished?'<span class="badge qual">Qualified</span>':'<span class="badge qual">In position</span>'):""}</td><td>${x.wins}</td><td>${x.losses}</td><td>${x.matches}</td><td>${pct(x.winRate)}</td><td>${pct(x.setRatio)}</td><td><span class="eligibility-tag ${x.matches>=3?"eligible":"not-yet"}">${x.matches>=3?"Eligible":Math.min(x.matches,3)+"/3 played"}</span></td></tr>`).join("")}</tbody></table></div></div>`;
-  }).join("");
+  const finished=all.size===105&&[...all].every(k=>recorded.has(k));
   const wc=wildcards();
+  const pendingTies="ABCDEFG".split("").some(g=>unresolvedTie(e[g]?.[1],e[g]?.[2]))||unresolvedTie(wc[1],wc[2]);
+  $("qualifiersTitle").textContent=finished&&!pendingTies?"Round of 16 field":"Projected Round of 16 field";
+  $("qualifiersNote").textContent=pendingTies?"A qualifying-place tie remains unresolved. The Sports Representative will decide it.":
+    finished?"Based on all recorded group-stage results.":"Current positions only — qualification is not yet final.";
+  el.innerHTML="ABCDEFG".split("").map(g=>{
+    const a=state.standings.filter(x=>x.group===g).sort(compareRank);
+    const eligible=e[g]||[];
+    const q=new Set(unresolvedTie(eligible[1],eligible[2])?[]:eligible.slice(0,2).map(x=>x.player));
+    return `<div class="group-standing"><div class="group-title">Group ${g}</div><div class="table-wrap"><table><thead><tr><th>#</th><th>Player</th><th title="Wins">W</th><th title="Losses">L</th><th title="Matches played">P</th><th title="Win rate">Win%</th><th title="Share of games won">Set%</th><th>KO eligibility</th></tr></thead><tbody>${a.map((x,i)=>`<tr class="${q.has(x.player)?"rank-auto":""}"><td>${i>0&&unresolvedTie(a[i-1],x)?"=":i+1}</td><td>${esc(x.player)} ${qualificationStatus(x,eligible,wc)==="Tie — decision pending"?'<span class="badge">Tie · decision pending</span>':q.has(x.player)?(finished&&!pendingTies?'<span class="badge qual">Qualified</span>':'<span class="badge qual">In position</span>'):""}</td><td>${x.wins}</td><td>${x.losses}</td><td>${x.matches}</td><td>${pct(x.winRate)}</td><td>${pct(x.setRatio)}</td><td><span class="eligibility-tag ${x.matches>=3?"eligible":"not-yet"}">${x.matches>=3?"Eligible":Math.min(x.matches,3)+"/3 played"}</span></td></tr>`).join("")}</tbody></table></div></div>`;
+  }).join("");
   const context=$("wildcardContext");
   if(context){
-    if(wc.length>=3&&wc[1].wins===wc[2].wins){
+    if(unresolvedTie(wc[1],wc[2])){
+      context.textContent="The final wildcard position is tied on every ranking criterion. Organizer decision pending.";
+    }else if(wc.length>=3&&wc[1].wins===wc[2].wins){
       context.textContent="Close race: the second and third wildcard candidates are tied on wins. The published tiebreakers determine their order.";
     }else if(wc.length>=3&&wc[1].wins-wc[2].wins===1){
       context.textContent="Close race: one win separates the second and third wildcard candidates. Positions can still change.";
@@ -972,8 +979,14 @@ function renderStandings(){
       context.textContent="Only players with at least 3 recorded matches appear here. Positions remain provisional until the group stage ends.";
     }
   }
-  $("wildcardTable").innerHTML=`<div class="table-wrap"><table><thead><tr><th>#</th><th>Group</th><th>Player</th><th>W</th><th>P</th><th>Win%</th><th>Set%</th><th>PD</th></tr></thead><tbody>${wc.map((x,i)=>`<tr class="${i<2?"rank-wild":""}"><td>${i+1}</td><td>${x.group}</td><td>${esc(x.player)}</td><td>${x.wins}</td><td>${x.matches}</td><td>${pct(x.winRate)}</td><td>${pct(x.setRatio)}</td><td>${x.pointDiff}</td></tr>`).join("")}</tbody></table></div>`;
-  const q=[];for(const g of "ABCDEFG"){if(e[g]?.[0])q.push([g+"1",e[g][0].player]);if(e[g]?.[1])q.push([g+"2",e[g][1].player])}if(wc[0])q.push(["WC1",wc[0].player]);if(wc[1])q.push(["WC2",wc[1].player]);
+  $("wildcardTable").innerHTML=`<div class="table-wrap"><table><thead><tr><th>#</th><th>Group</th><th>Player</th><th>W</th><th>P</th><th>Win%</th><th>Set%</th><th>PD</th></tr></thead><tbody>${wc.map((x,i)=>`<tr class="${i<2&&!unresolvedTie(wc[1],wc[2])?"rank-wild":""}"><td>${i>0&&unresolvedTie(wc[i-1],x)?"=":i+1}</td><td>${x.group}</td><td>${esc(x.player)}</td><td>${x.wins}</td><td>${x.matches}</td><td>${pct(x.winRate)}</td><td>${pct(x.setRatio)}</td><td>${x.pointDiff}</td></tr>`).join("")}</tbody></table></div>`;
+  const q=[];for(const g of "ABCDEFG"){
+    if(e[g]?.[0]&&!unresolvedTie(e[g][1],e[g][2]))q.push([g+"1",e[g][0].player]);
+    if(e[g]?.[1]&&!unresolvedTie(e[g][1],e[g][2]))q.push([g+"2",e[g][1].player]);
+    if(unresolvedTie(e[g]?.[1],e[g]?.[2]))q.push([g+"2","Tie — decision pending"]);
+  }
+  if(wc[0])q.push(["WC1",wc[0].player]);
+  if(wc[1])q.push(["WC2",unresolvedTie(wc[1],wc[2])?"Tie — decision pending":wc[1].player]);
   $("qualifiers").innerHTML=`<div class="qual-list">${q.map(([s,p])=>`<div class="qual-item"><strong>${s}</strong> • ${esc(p)}</div>`).join("")}</div>`;
 }
 
