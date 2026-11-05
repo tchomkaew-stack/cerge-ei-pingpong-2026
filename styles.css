@@ -1324,3 +1324,19 @@ footer{line-height:1.5}
   html{scroll-behavior:auto}
   *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}
 }
+
+/* Notification read state: quiet bell when read, distinct unread entries on open. */
+.notification-item{border-left:2px solid #dce3ed;background:#fff}
+.notification-item-new{border-left:3px solid var(--crimson);background:#fcfafc}
+.notification-item-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:9px;margin-bottom:5px}
+.notification-item-heading .notification-item-title{margin:0;min-width:0;overflow-wrap:anywhere}
+.notification-new-label{
+  flex:0 0 auto;padding:3px 7px;border-radius:999px;
+  background:#f8e7ed;color:#9c1e43;font-size:.67rem;
+  font-weight:800;line-height:1.2;
+}
+.notification-btn:not(.has-unseen) .notification-bell{animation:none}
+@media(prefers-reduced-motion:reduce){
+  .notification-btn.has-unseen .notification-bell,
+  .notification-btn.has-unseen .notification-dot{animation:none}
+}
