@@ -863,10 +863,23 @@ function renderSchedule(){
     notice.hidden=dataFreshness.schedule;
     notice.textContent=dataFreshness.schedule?"":"The current schedule could not be confirmed from Google Sheets. Check the sheet or refresh before relying on these times.";
   }
-  const q=norm($("scheduleSearch").value).toLowerCase(),g=$("groupFilter").value,w=$("weekFilter").value;
-  const a=state.schedule.filter(m=>(!g||m.group===g)&&(!w||String(m.week)===w)&&(!q||m.p1.toLowerCase().includes(q)||m.p2.toLowerCase().includes(q)));
-  $("scheduleTableWrap").innerHTML=`<div class="table-wrap"><table><thead><tr><th>Week</th><th>Date</th><th>Time</th><th>Group</th><th>Player 1</th><th>Player 2</th></tr></thead><tbody>${a.map(m=>`<tr><td>${m.week}</td><td>${esc(fmtDate(m.date))}</td><td>${esc(m.time)}</td><td>${m.group}</td><td>${esc(m.p1)}</td><td>${esc(m.p2)}${rematchMarkup(m,true)}</td></tr>`).join("")}</tbody></table></div>`;
+  const q=sheetKey($("scheduleSearch").value),g=$("groupFilter").value,w=$("weekFilter").value;
+  const matches=state.schedule.filter(m=>(!g||m.group===g)&&(!w||String(m.week)===w)&&
+    (!q||sheetKey(m.p1).includes(q)||sheetKey(m.p2).includes(q)));
+  $("scheduleTableWrap").innerHTML='<div class="table-wrap"><table><thead><tr>'+
+    '<th>Week</th><th>Date</th><th>Time</th><th>Group</th><th>Player 1</th><th>Player 2</th><th>Status</th>'+
+    '</tr></thead><tbody>'+matches.map(m=>{
+      const r=resultForMatch(m);
+      const past=matchTime(m)<Date.now();
+      const label=r?'Completed'+(r.forfeit==="Y"?' · forfeit':' · '+resultScoreSummary(r)):
+        past?'Time passed · update pending':'Scheduled';
+      return '<tr><td>'+esc(m.week)+'</td><td>'+esc(fmtDate(m.date))+'</td><td>'+esc(m.time)+'</td>'+
+        '<td>'+esc(m.group)+'</td><td>'+esc(m.p1)+'</td><td>'+esc(m.p2)+rematchMarkup(m,true)+'</td>'+
+        '<td><span class="schedule-table-status '+(r?'completed':past?'pending':'scheduled')+'">'+esc(label)+'</span></td></tr>';
+    }).join("")+'</tbody></table></div>'+
+    (!matches.length?'<p class="muted-empty">No matches found for these filters.</p>':"");
 }
+
 function renderGroups(){
   $("groupsGrid").innerHTML="ABCDEFG".split("").map(g=>`<div class="group-card"><h3>Group ${g}</h3>${state.groups.filter(x=>x.group===g).map(p=>`<div class="player-row"><span>${esc(p.player)}</span><span class="role">${esc(p.role)}</span></div>`).join("")}</div>`).join("");
 }
