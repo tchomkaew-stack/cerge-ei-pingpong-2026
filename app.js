@@ -1187,7 +1187,7 @@ function validateScoreForm(){
     }else{
       const result=readScoreForm();
       who=result.wins[0]===3?match.p1:match.p2;
-      summary=who+" wins "+result.wins.join("–")+" games.";
+      summary=who+" wins "+Math.max(...result.wins)+"–"+Math.min(...result.wins)+" games.";
     }
     winner.textContent=summary;
     btn.disabled=!scoreWriteEnabled||scoreSubmitting;
@@ -1226,7 +1226,7 @@ async function submitScoreForm(e){
     }else{
       const checked=readScoreForm();
       payload.scores=checked.games;
-      summary=(checked.wins[0]===3?match.p1:match.p2)+" wins "+checked.wins.join("–");
+      summary=(checked.wins[0]===3?match.p1:match.p2)+" wins "+Math.max(...checked.wins)+"–"+Math.min(...checked.wins);
     }
   }catch(err){$("scoreEntryFeedback").textContent=err.message;return}
   const existing=matchHasResult(match);
