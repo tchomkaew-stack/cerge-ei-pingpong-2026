@@ -626,9 +626,14 @@ function renderStandings(){
     el.innerHTML='<p class="muted-empty">Waiting for live standings data.</p>';$("wildcardTable").innerHTML="";$("qualifiers").innerHTML="";return;
   }
   const e=eligibleByGroup();
+  const all=new Set(state.schedule.map(m=>pairKey(m.group,m.p1,m.p2)));
+  const recorded=new Set(state.results.map(r=>pairKey(r.group,r.p1,r.p2)));
+  const finished=all.size>0&&[...all].every(k=>recorded.has(k));
+  $("qualifiersTitle").textContent=finished?"Round of 16 field":"Projected Round of 16 field";
+  $("qualifiersNote").textContent=finished?"Based on all recorded group-stage results.":"Current positions only — qualification is not yet final.";
   el.innerHTML="ABCDEFG".split("").map(g=>{
     const a=state.standings.filter(x=>x.group===g).sort(compareRank),q=new Set((e[g]||[]).slice(0,2).map(x=>x.player));
-    return `<div class="group-standing"><div class="group-title">Group ${g}</div><div class="table-wrap"><table><thead><tr><th>#</th><th>Player</th><th>W</th><th>L</th><th>P</th><th>Win%</th><th>Set%</th></tr></thead><tbody>${a.map((x,i)=>`<tr class="${q.has(x.player)?"rank-auto":""}"><td>${i+1}</td><td>${esc(x.player)} ${q.has(x.player)?'<span class="badge qual">Q</span>':""}</td><td>${x.wins}</td><td>${x.losses}</td><td>${x.matches}</td><td>${pct(x.winRate)}</td><td>${pct(x.setRatio)}</td></tr>`).join("")}</tbody></table></div></div>`;
+    return `<div class="group-standing"><div class="group-title">Group ${g}</div><div class="table-wrap"><table><thead><tr><th>#</th><th>Player</th><th>W</th><th>L</th><th>P</th><th>Win%</th><th>Set%</th><th>KO minimum</th></tr></thead><tbody>${a.map((x,i)=>`<tr class="${q.has(x.player)?"rank-auto":""}"><td>${i+1}</td><td>${esc(x.player)} ${q.has(x.player)?(finished?'<span class="badge qual">Qualified</span>':'<span class="badge qual">In position</span>'):""}</td><td>${x.wins}</td><td>${x.losses}</td><td>${x.matches}</td><td>${pct(x.winRate)}</td><td>${pct(x.setRatio)}</td><td>${Math.min(x.matches,3)}/3</td></tr>`).join("")}</tbody></table></div></div>`;
   }).join("");
   const wc=wildcards();
   $("wildcardTable").innerHTML=`<div class="table-wrap"><table><thead><tr><th>#</th><th>Group</th><th>Player</th><th>W</th><th>P</th><th>Win%</th><th>Set%</th><th>PD</th></tr></thead><tbody>${wc.map((x,i)=>`<tr class="${i<2?"rank-wild":""}"><td>${i+1}</td><td>${x.group}</td><td>${esc(x.player)}</td><td>${x.wins}</td><td>${x.matches}</td><td>${pct(x.winRate)}</td><td>${pct(x.setRatio)}</td><td>${x.pointDiff}</td></tr>`).join("")}</tbody></table></div>`;
