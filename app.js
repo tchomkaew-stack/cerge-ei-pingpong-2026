@@ -1119,6 +1119,23 @@ function showScoreMatch(preserveFields=false){
   if(!games.children.length){
     games.innerHTML=[0,1,2,3,4].map(i=>'<div class="score-game-row"><span>Game '+(i+1)+'</span><input aria-label="Game '+(i+1)+' Player 1 points" type="number" min="0" max="99" inputmode="numeric" data-side="0" data-game="'+i+'" placeholder="P1"><b>–</b><input aria-label="Game '+(i+1)+' Player 2 points" type="number" min="0" max="99" inputmode="numeric" data-side="1" data-game="'+i+'" placeholder="P2"></div>').join("");
   }
+  if(!preserveFields){
+    const type=$("scoreResultType");
+    if(type)type.value=recorded?.forfeit==="Y"?"forfeit":"normal";
+    const inputs=[...games.querySelectorAll("input")];
+    inputs.forEach(input=>input.value="");
+    if(recorded?.forfeit==="Y"){
+      if(forfeitWinner)forfeitWinner.value=sheetKey(recorded.winner)===sheetKey(m.p1)?"p1":"p2";
+    }else if(recorded?.scores?.length){
+      recorded.scores.forEach((score,i)=>{
+        const pair=scorePair(score);
+        if(pair&&inputs[i*2]&&inputs[i*2+1]){
+          inputs[i*2].value=String(pair[0]);
+          inputs[i*2+1].value=String(pair[1]);
+        }
+      });
+    }
+  }
   updateScoreEntryType();
 }
 function updateScoreEntryType(){
