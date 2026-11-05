@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="CERGE-EI Ping Pong League 2026 tournament hub: schedule, standings, groups, results and rules.">
   <title>CERGE-EI Ping Pong League 2026</title>
-  <link rel="stylesheet" href="styles.css?v=20261105-notifications-v2">
+  <link rel="stylesheet" href="styles.css?v=20261105-player-utility-v1">
 </head>
 <body>
 <header class="hero">
@@ -110,6 +110,7 @@
 <nav class="tabs" aria-label="Tournament navigation">
   <button class="tab active" data-view="home">Home</button>
   <button class="tab" data-view="schedule">Schedule</button>
+  <button class="tab" data-view="results">Results</button>
   <button class="tab" data-view="standings">Standings</button>
   <button class="tab" data-view="groups">Groups</button>
   <button class="tab" data-view="rules">Rules</button>
@@ -144,6 +145,7 @@
     <div class="status-row">
       <div class="live-cluster">
         <span id="liveStatus" class="status-pill">Connecting…</span>
+        <span id="lastUpdated" class="last-updated" aria-live="off"></span>
         <div id="liveError" class="live-error"></div>
       </div>
       <button id="refreshBtn" class="secondary-btn" type="button">Refresh</button>
@@ -194,7 +196,7 @@
         <div id="nextMatches" class="stack"></div>
       </section>
       <section class="panel">
-        <h2>Latest results</h2>
+        <div class="home-results-heading"><h2>Recorded results</h2><button class="text-action" type="button" data-view="results">View all results</button></div>
         <div id="latestResults" class="stack muted-empty">No results recorded yet.</div>
       </section>
     </div>
@@ -232,11 +234,34 @@
     </section>
   </section>
 
+
+  <section id="results" class="view">
+    <section class="panel">
+      <div class="section-heading">
+        <div><h2>Recorded results</h2><p>Explore completed matches and game-by-game scores from Google Sheets.</p></div>
+      </div>
+      <div class="filters">
+        <input id="resultsSearch" class="search" type="search" aria-label="Search recorded results by player" placeholder="Search a player…">
+        <select id="resultsGroupFilter" aria-label="Filter recorded results by group">
+          <option value="">All groups</option>
+          <option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option>
+        </select>
+      </div>
+      <p id="resultsCount" class="results-count" aria-live="polite"></p>
+      <div id="resultsList" class="results-browser"></div>
+    </section>
+  </section>
+
   <section id="standings" class="view">
     <section class="panel">
       <div class="section-heading">
         <div><h2>Live standings</h2><p>Calculated from recorded results. Minimum 3 completed matches required for knockout eligibility.</p></div>
       </div>
+      <details class="ranking-explainer">
+        <summary>How are rankings and knockout places decided?</summary>
+        <p>Players are ranked by <strong>wins</strong>, then <strong>win rate</strong>, then <strong>share of games won (Set%)</strong>, and finally <strong>point difference (PD)</strong>.</p>
+        <p>A player needs at least <strong>3 recorded matches</strong> to be eligible for the knockout. The top two eligible players in each group take the automatic places; the two highest-ranked eligible third-place players receive wildcards. Positions are provisional until the group stage finishes.</p>
+      </details>
       <div id="standingsGrid" class="standings-grid"></div>
     </section>
 
@@ -244,6 +269,7 @@
       <section class="panel">
         <h2>Current best third-place race</h2>
         <p class="small-note">The top two eligible third-place finishers receive wild cards.</p>
+        <p id="wildcardContext" class="wildcard-context" aria-live="polite"></p>
         <div id="wildcardTable"></div>
       </section>
       <section class="panel">
@@ -440,7 +466,9 @@
       <div class="score-entry-shell">
         <div id="scoreEntryAvailability" class="score-entry-notice" role="status">Checking score submission availability…</div>
         <form id="scoreEntryForm" class="score-entry-form" autocomplete="off">
-          <label for="scoreMatchSelect">1. Which match did you play?</label>
+          <label for="scoreMatchSearch">1. Find your match</label>
+          <input id="scoreMatchSearch" class="search score-match-search" type="search" placeholder="Filter by player name or group…" autocomplete="off">
+          <label for="scoreMatchSelect" class="score-select-label">Choose the match</label>
           <select id="scoreMatchSelect" required><option value="">Choose your match…</option></select>
           <div id="scoreSelectedMatch" class="score-entry-names" aria-live="polite">Choose a match to see the players' names.</div>
           <p id="scoreExistingResult" class="score-entry-existing" hidden></p>
@@ -551,7 +579,7 @@
   <p>CERGE-EI Ping Pong League 2026 · Made for the CERGE-EI community in Prague</p>
 </footer>
 
-<script src="app.js?v=20261105-notifications-v2"></script>
+<script src="app.js?v=20261105-player-utility-v1"></script>
   <!-- Cloudflare Web Analytics --><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"cf4b67f5c23d4509a9bf91c446bc2d6f"}'></script><!-- End Cloudflare Web Analytics -->
   <!-- deploy-refresh: 2026-11-02T17:20+01:00 -->
 </body>
