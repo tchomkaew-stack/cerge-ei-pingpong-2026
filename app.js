@@ -774,7 +774,7 @@ function renderHome(){
   const latest=[...state.results].slice(-6).reverse();
   $("latestResults").innerHTML=latest.length?latest.map(r=>
     '<div class="result-card"><div class="match-meta">'+(r.date?esc(fmtDate(r.date))+' · ':'')+'Group '+esc(r.group)+'</div>'+
-    '<div><strong>'+esc(r.winner)+'</strong> won '+(r.forfeit==="Y"?"by forfeit":esc(resultScoreSummary(r)))+
+    '<div><strong>'+esc(r.winner)+'</strong> won'+(r.forfeit==="Y"?" by forfeit":resultScoreSummary(r)==="Result recorded"?"":" "+esc(resultScoreSummary(r)))+
     (isFiveGameMatch(r)?' <span class="close-match-tag">Five-game thriller</span>':"")+'</div>'+
     '<div class="small-note">'+esc(r.p1)+' vs '+esc(r.p2)+'</div></div>').join(""):"No results recorded yet.";
   renderProgress();
