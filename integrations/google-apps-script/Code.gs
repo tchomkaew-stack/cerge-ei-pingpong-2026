@@ -91,6 +91,12 @@ function doPost(e) {
     sheet.getRange(found+1,7,1,5).setValues([scores]);
     sheet.getRange(found+1,12).setValue(winner);
     sheet.getRange(found+1,forfeitCol).setValue(isForfeit?'Y':'N');
+    let updatedCol=headers.findIndex(x=>x==='last updated'||x==='updated at'||x==='recorded at')+1;
+    if(!updatedCol){
+      updatedCol=Math.max(sheet.getLastColumn()+1,forfeitCol+1);
+      sheet.getRange(headings+1,updatedCol).setValue('Last updated');
+    }
+    sheet.getRange(found+1,updatedCol).setValue(new Date()).setNumberFormat('yyyy-mm-dd hh:mm:ss');
     SpreadsheetApp.flush();
     // Record the previous and new values for transparent, self-service corrections.
     let auditLogged=true,auditWarning='';
