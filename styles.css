@@ -953,3 +953,6 @@ footer::before{
 .score-entry-existing{margin:0!important;padding:12px 14px;border:1px solid #f0d4a4;border-radius:10px;background:#fff8e9;color:#694717;font-size:.91rem;font-weight:750;line-height:1.5}
 #scoreNormalFields,#scoreForfeitFields{display:grid;gap:10px}
 #scoreForfeitFields select{width:100%;min-height:45px;border:1px solid #cbd7e4;border-radius:10px;padding:10px 12px;background:#fff;color:var(--ink);font:inherit}
+
+/* Keep expired pre-season promotion hidden in cached homepage HTML. */
+.history-panel{display:none!important}
