@@ -582,57 +582,6 @@ function renderStandings(){
   $("qualifiers").innerHTML=`<div class="qual-list">${q.map(([s,p])=>`<div class="qual-item"><strong>${s}</strong> • ${esc(p)}</div>`).join("")}</div>`;
 }
 
-function renderChallenges(){
-  const cards=[
-    {
-      tag:"PERFECT GROUP STAGE",
-      name:"Ctirad Slavik",
-      stat:"6–0 · 100%",
-      text:"Ctirad went unbeaten in last year’s group stage — and did not drop a single game (12–0). Who will be the first to take one this season?"
-    },
-    {
-      tag:"UNBEATEN RETURNER",
-      name:"Arman Kazemi",
-      stat:"6–0 · +89",
-      text:"Arman also finished last year’s group stage undefeated, with the biggest point differential among this year’s returning players. Can Group G stop the streak?"
-    },
-    {
-      tag:"PERFECT RETURNER",
-      name:"Michael Schulz",
-      stat:"6–0 · 100%",
-      text:"Michael swept all six group-stage matches last season and returns in Group C. Who will hand him his first group-stage loss?"
-    },
-    {
-      tag:"PERFECT RETURNER",
-      name:"Yaroslav Korobka",
-      stat:"6–0 · 100%",
-      text:"Yaroslav completed another perfect 6–0 group stage last year. This season, Group E gets the challenge."
-    },
-    {
-      tag:"STRONG RETURNER",
-      name:"Filip Matejka",
-      stat:"5–1 · 83%",
-      text:"Filip won five of six group-stage matches last year and posted a +80 point differential — one of the strongest returning records."
-    },
-    {
-      tag:"WELCOME BACK",
-      name:"19 returning players",
-      stat:"45% return",
-      text:"Almost half of this year’s field also played in 2025 — a nice sign that people wanted another season."
-    }
-  ];
-  const el=$("challengeGrid");
-  if(!el)return;
-  el.innerHTML=cards.map((c,i)=>`<article class="challenge-card ${i<4?"challenge-featured":""}">
-    <div class="challenge-top">
-      <span class="challenge-tag">${esc(c.tag)}</span>
-      <strong class="challenge-stat">${esc(c.stat)}</strong>
-    </div>
-    <h3>${esc(c.name)}</h3>
-    <p>${esc(c.text)}</p>
-  </article>`).join("");
-}
-
 let scoreWriteEnabled=false, scoreSubmitting=false;
 function scoreMatchKey(m){return [m.group,m.p1,m.p2].join("|")}
 function matchHasResult(m){
@@ -798,7 +747,7 @@ async function submitScoreForm(e){
   finally{scoreSubmitting=false;validateScoreForm()}
 }
 
-function renderAll(){renderHome();renderSchedule();renderGroups();renderStandings();renderChallenges();renderNotifications();renderScoreForm()}
+function renderAll(){renderHome();renderSchedule();renderGroups();renderStandings();renderNotifications();renderScoreForm()}
 
 document.querySelectorAll(".tab,[data-view='record-score'],[data-view='change-schedule']").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
 $("notificationBtn")?.addEventListener("click",()=>{
