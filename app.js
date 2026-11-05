@@ -637,6 +637,7 @@ function renderKnockout(){
 
 let refreshInFlight=null;
 let lastRefreshAt=0;
+const dataFreshness={schedule:false,results:false,standings:false};
 async function refreshData(){
   if(refreshInFlight)return refreshInFlight;
   refreshInFlight=(async()=>{
@@ -685,6 +686,10 @@ async function refreshData(){
         sheetStandings.reduce((n,x)=>n+x.matches,0)>=calculated.reduce((n,x)=>n+x.matches,0))
         ?sheetStandings:calculated.length?calculated:sheetStandings;
     }
+    dataFreshness.schedule=scheduleFresh;
+    dataFreshness.results=Boolean(loaded["Results recording"]);
+    dataFreshness.standings=Boolean(loaded.Standing)||
+      Boolean(loaded["Results recording"]&&state.groups.length);
     if(loaded.Announcements){
       const merged=[...FALLBACK_ANNOUNCEMENTS];
       for(const notice of parseAnnouncements(loaded.Announcements)){
@@ -827,6 +832,11 @@ function isFiveGameMatch(r){
 }
 function renderResults(){
   const list=$("resultsList"),count=$("resultsCount");
+  const notice=$("resultsSourceNotice");
+  if(notice){
+    notice.hidden=dataFreshness.results;
+    notice.textContent=dataFreshness.results?"":"Results could not be confirmed from Google Sheets. Displayed results may be incomplete or older.";
+  }
   if(!list)return;
   const q=sheetKey($("resultsSearch")?.value||"");
   const group=$("resultsGroupFilter")?.value||"";
@@ -848,6 +858,11 @@ function renderResults(){
 }
 
 function renderSchedule(){
+  const notice=$("scheduleSourceNotice");
+  if(notice){
+    notice.hidden=dataFreshness.schedule;
+    notice.textContent=dataFreshness.schedule?"":"The current schedule could not be confirmed from Google Sheets. Check the sheet or refresh before relying on these times.";
+  }
   const q=norm($("scheduleSearch").value).toLowerCase(),g=$("groupFilter").value,w=$("weekFilter").value;
   const a=state.schedule.filter(m=>(!g||m.group===g)&&(!w||String(m.week)===w)&&(!q||m.p1.toLowerCase().includes(q)||m.p2.toLowerCase().includes(q)));
   $("scheduleTableWrap").innerHTML=`<div class="table-wrap"><table><thead><tr><th>Week</th><th>Date</th><th>Time</th><th>Group</th><th>Player 1</th><th>Player 2</th></tr></thead><tbody>${a.map(m=>`<tr><td>${m.week}</td><td>${esc(fmtDate(m.date))}</td><td>${esc(m.time)}</td><td>${m.group}</td><td>${esc(m.p1)}</td><td>${esc(m.p2)}${rematchMarkup(m,true)}</td></tr>`).join("")}</tbody></table></div>`;
@@ -856,6 +871,11 @@ function renderGroups(){
   $("groupsGrid").innerHTML="ABCDEFG".split("").map(g=>`<div class="group-card"><h3>Group ${g}</h3>${state.groups.filter(x=>x.group===g).map(p=>`<div class="player-row"><span>${esc(p.player)}</span><span class="role">${esc(p.role)}</span></div>`).join("")}</div>`).join("");
 }
 function renderStandings(){
+  const notice=$("standingsSourceNotice");
+  if(notice){
+    notice.hidden=dataFreshness.standings;
+    notice.textContent=dataFreshness.standings?"":"Live standings could not be confirmed. Rankings may be incomplete or older.";
+  }
   const el=$("standingsGrid");
   if(!state.standings.length){
     el.innerHTML='<p class="muted-empty">Waiting for live standings data.</p>';$("wildcardTable").innerHTML="";$("qualifiers").innerHTML="";return;
