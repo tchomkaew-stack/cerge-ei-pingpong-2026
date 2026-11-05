@@ -988,3 +988,16 @@ footer::before{
 .match-schedule-note{font-size:.73rem;color:#795d28;margin:-3px 0 9px 8px}
 @media(max-width:850px){.group-progress{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:560px){.group-progress{grid-template-columns:repeat(2,minmax(0,1fr))}.player-summary-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.player-summary-head{flex-direction:column}}
+
+/* Knockout bracket is hidden until official fixtures are published in Sheets. */
+.knockout-bracket{display:grid;grid-template-columns:repeat(4,minmax(175px,1fr));gap:14px;overflow-x:auto;padding:8px 0}
+.knockout-round{display:flex;flex-direction:column;gap:10px}
+.knockout-round h3{font-size:.94rem;color:var(--navy)}
+.bracket-match{display:flex;flex-direction:column;gap:6px;width:100%;text-align:left;border:1px solid #dbe4ef;border-radius:12px;background:#fff;padding:12px;color:var(--ink);cursor:pointer}
+.bracket-match:disabled{opacity:.58;cursor:default}
+.bracket-match:not(:disabled):hover{border-color:var(--crimson)}
+.bracket-match-num{font-size:.7rem;color:var(--muted)}
+.bracket-winner{font-weight:900;color:#176b43}
+.knockout-detail{border-radius:10px;background:#f4f7fb;padding:12px;margin-top:18px;color:var(--navy);font-size:.87rem}
+.tab[hidden],.view[hidden]{display:none!important}
+@media(max-width:850px){.knockout-bracket{grid-template-columns:repeat(4,190px)}}
