@@ -466,7 +466,34 @@ function fmtDate(s){
   return s;
 }
 function pairKey(g,a,b){return g+":"+[a,b].sort().join("|")}
-function matchCard(m){return `<div class="match-card"><div class="match-meta">${esc(fmtDate(m.date))} • ${esc(m.time)} • Group ${m.group} • Week ${m.week}</div><div class="match-main"><span>${esc(m.p1)}</span><b>vs</b><span>${esc(m.p2)}</span></div></div>`}
+// These are verified 2025 encounters. Show them only on unplayed 2026 fixtures.
+const FEATURED_2025_REMATCHES=[
+  {group:"E",players:["Shafin Shabir","Tomas Haufer"],story:"2025: Shafin came back from 1–2 down to win 3–2.",note:"Time to be confirmed — Shafin requested a start after 15:00."},
+  {group:"E",players:["Filip Pertold","Gayane Baghumyan"],story:"2025: Filip won a five-game thriller, 3–2 (11–6 in the decider)."},
+  {group:"G",players:["Václav Jeřábek","Arman Kazemi"],story:"2025: Arman lost the opening game, then fought back to win 3–1."}
+];
+function rematch2025(m){
+  // A fixture can be played early or rescheduled. A recorded result always wins
+  // over the scheduled date; past dates without a result are not promoted.
+  if(state.results.some(r=>sheetKey(r.group)===sheetKey(m.group)
+    && [sheetKey(r.p1),sheetKey(r.p2)].sort().join("|")===[sheetKey(m.p1),sheetKey(m.p2)].sort().join("|")))return null;
+  if(matchTime(m)<Date.now())return null;
+  const pair=[sheetKey(m.p1),sheetKey(m.p2)].sort().join("|");
+  return FEATURED_2025_REMATCHES.find(x=>sheetKey(x.group)===sheetKey(m.group)
+    && x.players.map(sheetKey).sort().join("|")===pair)||null;
+}
+function rematchMarkup(m,compact=false){
+  const feature=rematch2025(m);
+  if(!feature)return "";
+  return '<div class="rematch-history'+(compact?' rematch-history-compact':'')+'">'+
+    '<span class="rematch-tag">2025 rematch</span>'+
+    '<span class="rematch-story">'+esc(feature.story)+'</span>'+
+    (feature.note?'<span class="rematch-time-note">'+esc(feature.note)+'</span>':"")+
+    '</div>';
+}
+function matchCard(m){
+  return `<div class="match-card"><div class="match-meta">${esc(fmtDate(m.date))} • ${esc(m.time)} • Group ${m.group} • Week ${m.week}</div><div class="match-main"><span>${esc(m.p1)}</span><b>vs</b><span>${esc(m.p2)}</span></div>${rematchMarkup(m)}</div>`;
+}
 
 
 function resultForMatch(m){return state.results.find(r=>pairKey(r.group,r.p1,r.p2)===pairKey(m.group,m.p1,m.p2))}
@@ -651,7 +678,7 @@ function renderMyMatches(){
 function renderSchedule(){
   const q=norm($("scheduleSearch").value).toLowerCase(),g=$("groupFilter").value,w=$("weekFilter").value;
   const a=state.schedule.filter(m=>(!g||m.group===g)&&(!w||String(m.week)===w)&&(!q||m.p1.toLowerCase().includes(q)||m.p2.toLowerCase().includes(q)));
-  $("scheduleTableWrap").innerHTML=`<div class="table-wrap"><table><thead><tr><th>Week</th><th>Date</th><th>Time</th><th>Group</th><th>Player 1</th><th>Player 2</th></tr></thead><tbody>${a.map(m=>`<tr><td>${m.week}</td><td>${esc(fmtDate(m.date))}</td><td>${esc(m.time)}</td><td>${m.group}</td><td>${esc(m.p1)}</td><td>${esc(m.p2)}</td></tr>`).join("")}</tbody></table></div>`;
+  $("scheduleTableWrap").innerHTML=`<div class="table-wrap"><table><thead><tr><th>Week</th><th>Date</th><th>Time</th><th>Group</th><th>Player 1</th><th>Player 2</th></tr></thead><tbody>${a.map(m=>`<tr><td>${m.week}</td><td>${esc(fmtDate(m.date))}</td><td>${esc(m.time)}</td><td>${m.group}</td><td>${esc(m.p1)}</td><td>${esc(m.p2)}${rematchMarkup(m,true)}</td></tr>`).join("")}</tbody></table></div>`;
 }
 function renderGroups(){
   $("groupsGrid").innerHTML="ABCDEFG".split("").map(g=>`<div class="group-card"><h3>Group ${g}</h3>${state.groups.filter(x=>x.group===g).map(p=>`<div class="player-row"><span>${esc(p.player)}</span><span class="role">${esc(p.role)}</span></div>`).join("")}</div>`).join("");
