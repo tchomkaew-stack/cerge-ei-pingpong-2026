@@ -500,7 +500,7 @@ function fmtDate(s){
   }
   return s;
 }
-function pairKey(g,a,b){return g+":"+[a,b].sort().join("|")}
+function pairKey(g,a,b){return sheetKey(g)+":"+[sheetKey(a),sheetKey(b)].sort().join("|")}
 // These are verified 2025 encounters. Show them only on unplayed 2026 fixtures.
 const FEATURED_2025_REMATCHES=[
   {group:"E",players:["Shafin Shabir","Tomas Haufer"],story:"2025: Shafin came back from 1–2 down to win 3–2.",note:"Time to be confirmed — Shafin requested a start after 15:00."},
@@ -536,12 +536,37 @@ function matchTime(m){
   const d=new Date((m.date||"")+"T"+(m.time||"00:00")+":00");
   return Number.isNaN(d.getTime())?Infinity:d.getTime();
 }
-function matchCardWithStatus(m){
-  const r=resultForMatch(m),label=r?"Recorded"+(r.forfeit==="Y"?" · forfeit":""):"Awaiting result";
-  return '<div class="match-with-action">'+matchCard(m)+'<div class="match-action-row"><span class="match-status '+(r?"completed":"pending")+'">'+label+'</span>'+
-    (r?'<span class="match-result-note">'+esc(r.winner)+' won · '+esc(r.forfeit==="Y"?"Forfeit":r.setScore||"Result recorded")+'</span>':"")+
-    '<button class="mini-action" type="button" data-record-match="'+esc(scoreMatchKey(m))+'">'+(r?"Correct result":"Record result")+'</button></div></div>';
+function playerMatchCard(m,player){
+  const result=resultForMatch(m);
+  const opponent=sheetKey(m.p1)===sheetKey(player)?m.p2:m.p1;
+  const when=(m.date?fmtDate(m.date):"Date to confirm")+(m.time?" · "+m.time:" · Time to confirm");
+  const isPast=!result&&matchTime(m)<Date.now();
+  let outcome="";
+  if(result){
+    const won=sheetKey(result.winner)===sheetKey(player);
+    let score="";
+    if(result.forfeit!=="Y"){
+      const pair=scorePair(result.setScore);
+      if(pair)score=" · "+Math.max(...pair)+"–"+Math.min(...pair);
+      else if(result.scores.length){
+        let p1=0,p2=0;
+        result.scores.forEach(s=>{const pair=scorePair(s);if(pair){if(pair[0]>pair[1])p1++;else if(pair[1]>pair[0])p2++}});
+        if(p1||p2)score=" · "+Math.max(p1,p2)+"–"+Math.min(p1,p2);
+      }
+    }
+    outcome='<span class="player-match-outcome '+(won?"won":"lost")+'">'+
+      (won?"Won":"Lost")+(result.forfeit==="Y"?" by forfeit":score)+'</span>';
+  }
+  const status=result?"Completed":isPast?"Time passed · result pending":"Scheduled";
+  return '<article class="player-fixture"><div class="player-fixture-main">'+
+    '<div class="player-fixture-opponent">vs '+esc(opponent)+'</div>'+
+    '<div class="player-fixture-date">'+esc(when)+' · Group '+esc(m.group)+'</div>'+
+    '</div><div class="player-fixture-side">'+
+    (result?outcome:'<span class="match-status '+(isPast?"pending":"scheduled")+'">'+esc(status)+'</span>')+
+    '<button class="mini-action" type="button" data-record-match="'+esc(scoreMatchKey(m))+'">'+
+    (result?"Correct result":"Record result")+'</button></div></article>';
 }
+
 function renderProgress(){
   const all=[...new Set(state.schedule.map(m=>pairKey(m.group,m.p1,m.p2)))];
   const done=new Set(state.results.map(r=>pairKey(r.group,r.p1,r.p2)));
@@ -749,11 +774,33 @@ function renderMyMatches(){
   const q=sheetKey($("homePlayerSearch").value),el=$("myMatches");
   if(q.length<2){el.innerHTML="";$("playerDashboard").innerHTML="";return}
   const players=[...new Set(state.groups.map(p=>p.player))].filter(p=>sheetKey(p).includes(q));
-  const a=state.schedule.filter(m=>sheetKey(m.p1).includes(q)||sheetKey(m.p2).includes(q))
-    .sort((x,y)=>matchTime(x)-matchTime(y));
+  if(players.length>1){
+    $("playerDashboard").innerHTML='<p class="small-note">Select your name to see only your fixtures.</p>';
+    el.innerHTML='<div class="player-choice-list">'+players.map(p=>
+      '<button type="button" class="player-choice" data-player-name="'+esc(p)+'">'+esc(p)+'</button>'
+    ).join("")+'</div>';
+    return;
+  }
+  if(!players.length){
+    $("playerDashboard").innerHTML="";
+    el.innerHTML='<p class="muted-empty">No matching player found. Try another spelling.</p>';
+    return;
+  }
+  const player=players[0];
+  const matches=state.schedule.filter(m=>sheetKey(m.p1)===sheetKey(player)||sheetKey(m.p2)===sheetKey(player));
+  const completed=matches.filter(m=>Boolean(resultForMatch(m))).sort((x,y)=>matchTime(y)-matchTime(x));
+  const pending=matches.filter(m=>!resultForMatch(m)&&matchTime(m)<Date.now()).sort((x,y)=>matchTime(y)-matchTime(x));
+  const upcoming=matches.filter(m=>!resultForMatch(m)&&matchTime(m)>=Date.now()).sort((x,y)=>matchTime(x)-matchTime(y));
   renderPlayerDashboard(players);
-  el.innerHTML=a.length?a.map(matchCardWithStatus).join(""):'<p class="muted-empty">No matching player found.</p>';
+  const group=(label,items,kind)=>items.length?
+    '<section class="player-fixture-group"><h4>'+label+' <span>'+items.length+'</span></h4>'+
+    (kind==="pending"?'<p class="player-fixture-hint">Scheduled time passed. The match may have been rearranged or its result not yet recorded.</p>':"")+
+    '<div class="player-fixture-list">'+items.map(m=>playerMatchCard(m,player)).join("")+'</div></section>':"";
+  el.innerHTML=matches.length
+    ?group("Upcoming matches",upcoming,"upcoming")+group("Awaiting update",pending,"pending")+group("Completed matches",completed,"completed")
+    :'<p class="muted-empty">No group-stage fixtures found for this player.</p>';
 }
+
 function renderSchedule(){
   const q=norm($("scheduleSearch").value).toLowerCase(),g=$("groupFilter").value,w=$("weekFilter").value;
   const a=state.schedule.filter(m=>(!g||m.group===g)&&(!w||String(m.week)===w)&&(!q||m.p1.toLowerCase().includes(q)||m.p2.toLowerCase().includes(q)));
@@ -982,6 +1029,12 @@ $("knockoutBracket").addEventListener("click",e=>{
   $("knockoutDetail").textContent=match.p1+" vs "+match.p2+(match.winner?" · Winner: "+match.winner:" · Awaiting result")+(match.date?" · "+match.date:"")+(match.time?" "+match.time:"");
 });
 $("myMatches").addEventListener("click",e=>{
+  const playerButton=e.target.closest("[data-player-name]");
+  if(playerButton){
+    $("homePlayerSearch").value=playerButton.dataset.playerName;
+    renderMyMatches();
+    return;
+  }
   const btn=e.target.closest("[data-record-match]");
   if(!btn)return;
   renderScoreForm();
