@@ -8,13 +8,6 @@ const FALLBACK_ANNOUNCEMENTS=[{
   start:"2026-11-02T17:20:00+01:00",
   expiry:"2026-11-09T23:59:00+01:00"
 },{
-  id:"schedule-2026-11-03-opening-day",
-  title:"Schedule update — Tue, 3 Nov",
-  message:"Several match times for the opening day have changed. Please check your updated match time in the Schedule.",
-  link:"schedule",
-  start:"2026-10-31T00:00:00+01:00",
-  expiry:"2026-11-03T18:30:00+01:00"
-},{
   id:"academic-priority-nov-2026",
   title:"Academic weeks ahead",
   message:"Midterm Weeks (2–13 Nov) and DPW/State Doctoral Exams Week (23–27 Nov) are coming up. Please reschedule matches as needed to avoid academic distractions.",
@@ -640,24 +633,6 @@ function renderChallenges(){
   </article>`).join("");
 }
 
-function renderOpeningMatches(){
-  const el=$("openingMatches");
-  if(!el)return;
-  const openingDay=state.schedule.filter(m=>m.date==="2026-11-03");
-  const findPlayerMatch=name=>openingDay.find(m=>m.p1===name||m.p2===name);
-  const marek=findPlayerMatch("Marek Kapička");
-  const ctirad=findPlayerMatch("Ctirad Slavik");
-  const card=(m,badge,desc)=>m?`<article class="opening-match-card">
-    <span class="opening-match-badge">${esc(badge)}</span>
-    <h3>${esc(fmtDate(m.date))} · ${esc(m.time)} · ${esc(m.p1)} vs ${esc(m.p2)}</h3>
-    <p>${esc(desc)}</p>
-  </article>`:"";
-  el.innerHTML=[
-    card(marek,"1st match · Director opens the league","A small league tradition: the Director plays the first match of the season."),
-    card(ctirad,"2nd match · Defending champion","Last season’s champion follows in the second match of opening day.")
-  ].join("");
-}
-
 let scoreWriteEnabled=false, scoreSubmitting=false;
 function scoreMatchKey(m){return [m.group,m.p1,m.p2].join("|")}
 function matchHasResult(m){
@@ -823,7 +798,7 @@ async function submitScoreForm(e){
   finally{scoreSubmitting=false;validateScoreForm()}
 }
 
-function renderAll(){renderHome();renderSchedule();renderGroups();renderStandings();renderChallenges();renderOpeningMatches();renderNotifications();renderScoreForm()}
+function renderAll(){renderHome();renderSchedule();renderGroups();renderStandings();renderChallenges();renderNotifications();renderScoreForm()}
 
 document.querySelectorAll(".tab,[data-view='record-score'],[data-view='change-schedule']").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
 $("notificationBtn")?.addEventListener("click",()=>{
