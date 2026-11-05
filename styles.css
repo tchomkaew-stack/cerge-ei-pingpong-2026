@@ -1450,3 +1450,8 @@ footer{line-height:1.5}
   font-size:.82rem;line-height:1.55;
 }
 .data-source-warning[hidden]{display:none}
+
+.schedule-table-status{display:inline-block;font-size:.75rem;font-weight:750;line-height:1.4;min-width:94px}
+.schedule-table-status.completed{color:#1c714b}
+.schedule-table-status.pending{color:#8b6b2e}
+.schedule-table-status.scheduled{color:#52677e}
