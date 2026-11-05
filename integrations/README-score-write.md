@@ -1,42 +1,26 @@
-# Enable score recording directly from the existing tournament website
+# Score recording — friendly tournament, no player PIN
 
-This feature is already implemented in the live website source:
-- Players open **Record Score** on the existing `pages.dev` site.
-- They select a match, enter up to five game scores, and provide a shared tournament PIN.
-- The site's `POST /api/submit-score` endpoint validates the request and sends it to Google Apps Script.
-- The Apps Script locates the existing row in the **Results recording** sheet and updates only **G:K** (game scores) and **L** (winner). **M** (set-score formula) and the existing Standing formulas are preserved.
-- The front end refreshes the standings from Google Sheets.
+Participants can record a new result, correct an existing result, or record a forfeit from **Record Score** on the existing Cloudflare Pages website. **No participant account, PIN, or organizer approval is required.** The confirmation dialog prevents accidental overwrites.
 
-## One-time setup: organizer access needed
+## Architecture
+- Cloudflare Pages Worker `POST /api/submit-score` validates a best-of-five match and forwards to the Apps Script.
+- The Worker and Apps Script share a **server-side-only** `SCORE_WRITE_SECRET`. Participants never see or enter it.
+- The bound Apps Script independently validates scores, checks that the match exists in **Results recording**, locks concurrent writes, and updates columns **G:K** (game scores) and **L** (winner). It does **not** overwrite the set-score formula in **M**.
+- Forfeits are recorded in a named **Forfeit (Y/N)** column, created at the end of the sheet if absent. A forfeit awards a win/loss but no games or points.
+- Every web submission sets **Last updated** and appends the old/new values to **Result change history** (a new tab created if needed). Existing scores may be replaced by another submission.
 
-**Step 1 — Create Apps Script**
+## One-time deployment (requires spreadsheet owner)
+1. Open [the tournament spreadsheet](https://docs.google.com/spreadsheets/d/1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI/edit) and select **Extensions → Apps Script**.
+2. Replace the bound script's `Code.gs` with [the repository's current Code.gs](./google-apps-script/Code.gs). **Saving this GitHub file alone does not update an already deployed Apps Script.**
+3. In **Project Settings → Script Properties**, set `SCORE_WRITE_SECRET` to a strong random secret.
+4. **Deploy → Manage deployments → Edit → New version → Deploy** (or deploy a new Web App). Execute as the spreadsheet owner, access **Anyone**. Confirm authorization.
+5. In Cloudflare Pages production **Variables and Secrets**, set `SCORE_WRITE_URL` to the deployed Apps Script `/exec` URL and `SCORE_WRITE_SECRET` to the matching secret. Redeploy if needed.
+6. **No `SCORE_ENTRY_PIN` is required.** Remove any obsolete PIN setting if one exists.
 
-1. Open the existing [tournament Google Sheet](https://docs.google.com/spreadsheets/d/1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI/edit) in a DESKTOP browser (or request desktop site).
-2. Select **Extensions → Apps Script**. **Do not create a standalone project at script.google.com.** The app must be bound to this particular spreadsheet to use the limited `spreadsheets.currentonly` access.
-3. Replace the editor's `Code.gs` with the contents of [Code.gs](./google-apps-script/Code.gs) in this repository. The `@OnlyCurrentDoc` annotation restricts access to the bound spreadsheet; if authorization asks for all Google Sheets, cancel and check you opened Apps Script through the tournament sheet.
-4. Open **Project Settings → Script Properties**. Create `SCORE_WRITE_SECRET` with a long randomly generated secret (minimum 32 random characters).
-5. Choose **Deploy → New deployment → Web app**. Execute as **Me** (the spreadsheet owner), access **Anyone**. Apps Script will request authorization to edit the sheet; review and approve it.
-6. Copy the Web app URL ending in `/exec`. Do not use the editor URL or `/dev` URL.
+## Test carefully
+Use a copy of the sheet or a mutually agreed test match, not an arbitrary completed match. Verify new scores, correction, and forfeit; check that the formula in column M remains intact, that the new flag and timestamp columns exist, and that **Result change history** records both versions. Then verify the public site refreshes its standings. Revert test data if using a real match.
 
-**Step 2 — Configure Cloudflare Pages secrets**
+## Important
+This is intentionally a trust-based, small community tournament. Anyone who can reach the public submission endpoint could submit or correct a result, even without a PIN. Server-side validation protects the *format* and consistency of submissions, **not the identity of the submitter**. Keep the site URL within the community where practical. The organizer can use the change-history tab to review mistakes.
 
-Open Cloudflare Dashboard → Workers & Pages → `cerge-ei-pingpong-2026` → **Settings → Variables and Secrets** (menu names may vary). Add the following **Production** environment variables, preferably as **Secret**:
-
-- `SCORE_WRITE_URL` = the Apps Script Web App `https://script.google.com/macros/s/.../exec` URL.
-- `SCORE_WRITE_SECRET` = **exactly the same** random secret in Google Apps Script's Script Properties.
-- `SCORE_ENTRY_PIN` = an independently chosen PIN/password to share privately with tournament participants. Do not place this PIN in source code.
-
-Trigger a new Pages deployment so the Worker receives those variables.
-
-**Step 3 — Test without affecting a played match**
-
-Use a real *unplayed* match with both players' consent or make a temporary copy of the spreadsheet and configure its ID for the test. Enter a legitimate best-of-five result, with each game's scores in Player 1 / Player 2 order. Verify the correct Google Sheet row is updated, the formula in M remains intact, and the site refreshes standings. Do **not** use an already-recorded match to test: duplicate submissions are blocked by design.
-
-## Important protections and caveats
-
-- Until all three Cloudflare settings exist, the website disables direct submissions and tells participants to continue recording in Google Sheets.
-- Users must know the submission PIN. **A shared PIN is only basic access control, not individual player authentication.** Anyone with the PIN could submit a result for another match, so participants should keep it private. For higher security, add real authentication and an admin correction workflow.
-- Existing results cannot be overwritten through the website. If a correction is needed, ask the Sports Representative to change it in Google Sheets.
-- The Apps Script performs independent score validation and rejects incomplete and duplicate results. It locks the script around writes to reduce concurrent-edit collisions.
-- Do not publish the secret, commit it to GitHub, or expose the Apps Script Web App URL as a player-facing link.
-- The site's URL, scheduling workflow, and read-only Google Sheets API remain unchanged.
+Until the Worker is configured and the new Apps Script deployment is active, participants can continue using the Google Sheet directly. Changes in GitHub alone cannot activate the updated Apps Script.
