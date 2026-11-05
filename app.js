@@ -400,7 +400,7 @@ function renderNotifications(){
       :"No active tournament notifications";
   list.innerHTML=active.length?active.map(a=>{
     const isNew=highlights.has(noticeVersion(a))||(!seen.has(noticeVersion(a))&&panel&&!panel.hidden);
-    const internal=["home","schedule","standings","groups","rules","knockout"].includes(a.link.toLowerCase());
+    const internal=["home","schedule","results","standings","groups","rules","knockout"].includes(a.link.toLowerCase());
     // Only allow ordinary web URLs from the announcements sheet.
     const external=/^https?:\/\//i.test(a.link);
     const action=a.link?(internal
@@ -767,7 +767,11 @@ function renderHome(){
     matchCard(m)+(matchTime(m)<now?'<div class="match-schedule-note">Scheduled time passed · result pending or match rescheduled</div>':"")
   ).join(""):"All group-stage matches completed.";
   const latest=[...state.results].slice(-6).reverse();
-  $("latestResults").innerHTML=latest.length?latest.map(r=>'<div class="result-card"><div class="match-meta">'+esc(r.date)+' • Group '+r.group+'</div><div><strong>'+esc(r.winner)+'</strong> won '+(r.forfeit==="Y"?"by forfeit":esc(r.setScore))+'</div><div class="small-note">'+esc(r.p1)+' vs '+esc(r.p2)+'</div></div>').join(""):"No results recorded yet.";
+  $("latestResults").innerHTML=latest.length?latest.map(r=>
+    '<div class="result-card"><div class="match-meta">'+(r.date?esc(fmtDate(r.date))+' · ':'')+'Group '+esc(r.group)+'</div>'+
+    '<div><strong>'+esc(r.winner)+'</strong> won '+esc(resultScoreSummary(r))+
+    (isFiveGameMatch(r)?' <span class="close-match-tag">Five-game thriller</span>':"")+'</div>'+
+    '<div class="small-note">'+esc(r.p1)+' vs '+esc(r.p2)+'</div></div>').join(""):"No results recorded yet.";
   renderProgress();
   renderFeaturedRematches();
   renderMyMatches();
@@ -801,6 +805,44 @@ function renderMyMatches(){
   el.innerHTML=matches.length
     ?group("Upcoming matches",upcoming,"upcoming")+group("Awaiting update",pending,"pending")+group("Completed matches",completed,"completed")
     :'<p class="muted-empty">No group-stage fixtures found for this player.</p>';
+}
+
+function resultScoreSummary(r){
+  if(r.forfeit==="Y")return "Forfeit";
+  const fromSheet=scorePair(r.setScore);
+  if(fromSheet)return Math.max(...fromSheet)+"–"+Math.min(...fromSheet);
+  let p1=0,p2=0;
+  for(const s of r.scores||[]){
+    const pair=scorePair(s);
+    if(pair){if(pair[0]>pair[1])p1++;else if(pair[1]>pair[0])p2++}
+  }
+  return p1||p2?Math.max(p1,p2)+"–"+Math.min(p1,p2):"Result recorded";
+}
+function isFiveGameMatch(r){
+  if(r.forfeit==="Y")return false;
+  const pair=scorePair(r.setScore);
+  return pair?Math.min(...pair)===2&&Math.max(...pair)===3:(r.scores||[]).length===5;
+}
+function renderResults(){
+  const list=$("resultsList"),count=$("resultsCount");
+  if(!list)return;
+  const q=sheetKey($("resultsSearch")?.value||"");
+  const group=$("resultsGroupFilter")?.value||"";
+  const results=state.results.filter(r=>(!group||r.group===group)&&
+    (!q||sheetKey(r.p1).includes(q)||sheetKey(r.p2).includes(q)||sheetKey(r.winner).includes(q))).slice().reverse();
+  if(count)count.textContent=results.length+" of "+state.results.length+" recorded results";
+  list.innerHTML=results.length?results.map(r=>{
+    const score=resultScoreSummary(r);
+    const games=r.scores?.length&&r.forfeit!=="Y"
+      ?'<div class="result-games"><span>Game scores (Player 1–Player 2)</span><strong>'+
+        r.scores.map(esc).join(' · ')+'</strong></div>':"";
+    return '<article class="result-browser-card">'+
+      '<div class="result-browser-top"><span>Group '+esc(r.group)+(r.date?' · '+esc(fmtDate(r.date)):'')+'</span>'+
+      (isFiveGameMatch(r)?'<span class="close-match-tag">Five-game thriller</span>':"")+'</div>'+
+      '<div class="result-browser-players"><span>'+esc(r.p1)+'</span><b>vs</b><span>'+esc(r.p2)+'</span></div>'+
+      '<div class="result-browser-winner"><strong>'+esc(r.winner)+'</strong> won'+(score==="Forfeit"?' by forfeit':score==="Result recorded"?"":' '+esc(score))+'</div>'+
+      games+'</article>';
+  }).join(""):'<p class="muted-empty">No recorded results match your search.</p>';
 }
 
 function renderSchedule(){
@@ -1026,10 +1068,10 @@ function removeExpiredPromotions(){
   // Older cached HTML may still contain the removed homepage promotion.
   document.querySelectorAll(".history-panel").forEach(el=>el.remove());
 }
-function renderAll(){removeExpiredPromotions();renderHome();renderSchedule();renderGroups();renderStandings();renderKnockout();renderNotifications();renderScoreForm()}
+function renderAll(){removeExpiredPromotions();renderHome();renderSchedule();renderResults();renderGroups();renderStandings();renderKnockout();renderNotifications();renderScoreForm()}
 removeExpiredPromotions();
 
-document.querySelectorAll(".tab,[data-view='record-score'],[data-view='change-schedule']").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
+document.querySelectorAll(".tab,[data-view='record-score'],[data-view='change-schedule'],[data-view='results']").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
 $("notificationBtn")?.addEventListener("click",()=>{
   const panel=$("notificationPanel");
   if(panel?.hidden)openNotifications();else closeNotifications();
@@ -1073,6 +1115,8 @@ $("myMatches").addEventListener("click",e=>{
   openView("record-score");
 });
 $("scheduleSearch").addEventListener("input",renderSchedule);
+$("resultsSearch")?.addEventListener("input",renderResults);
+$("resultsGroupFilter")?.addEventListener("change",renderResults);
 $("groupFilter").addEventListener("change",renderSchedule);
 $("weekFilter").addEventListener("change",renderSchedule);
 $("refreshBtn").addEventListener("click",refreshData);
