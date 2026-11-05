@@ -1,5 +1,5 @@
 const SHEET_ID="1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI";
-const state={groups:[],schedule:[],results:[],standings:[],announcements:[]};
+const state={groups:[],schedule:[],results:[],standings:[],announcements:[],knockout:[]};
 const FALLBACK_ANNOUNCEMENTS=[{
   id:"group-stage-best-of-five-2026-11-02",
   title:"Rule clarification — group stage is best of 5",
@@ -512,6 +512,40 @@ function renderPlayerDashboard(players){
     '<span><strong>'+Math.max(0,matches.length-played)+'</strong> remaining</span><span><strong>'+Math.min(played,3)+'/3</strong> knockout minimum</span></div></div>';
 }
 
+
+function parseKnockout(rows){
+  const h=rows.findIndex(r=>r.map(sheetKey).includes("round")&&r.map(sheetKey).includes("player 1")&&r.map(sheetKey).includes("player 2"));
+  if(h<0)return[];
+  const cols=rows[h].map(sheetKey),idx=(...xs)=>cols.findIndex(x=>xs.includes(x));
+  const ir=idx("round"),im=idx("match","match number","match #"),ip1=idx("player 1"),ip2=idx("player 2"),iw=idx("winner"),id=idx("date"),it=idx("time");
+  const rounds={"r16":"R16","round of 16":"R16","last 16":"R16","quarterfinal":"QF","quarterfinals":"QF","qf":"QF","semifinal":"SF","semifinals":"SF","semi-final":"SF","sf":"SF","final":"F","f":"F"};
+  return rows.slice(h+1).map((r,i)=>({
+    round:rounds[sheetKey(r[ir])]||"",match:im>=0?Number(norm(r[im])):i+1,
+    p1:norm(r[ip1]),p2:norm(r[ip2]),winner:iw>=0?norm(r[iw]):"",
+    date:id>=0?norm(r[id]):"",time:it>=0?norm(r[it]):""
+  })).filter(x=>x.round&&x.p1&&x.p2);
+}
+function renderKnockout(){
+  const published=state.knockout.length>0;
+  $("knockoutTab").hidden=!published;
+  $("knockout").hidden=!published;
+  if(!published){if($("knockout").classList.contains("active"))openView("home");return}
+  const rounds=[["R16","Round of 16",8],["QF","Quarterfinals",4],["SF","Semifinals",2],["F","Final",1]];
+  $("knockoutBracket").innerHTML=rounds.map(([key,label,count])=>{
+    const matches=state.knockout.filter(x=>x.round===key).sort((a,b)=>a.match-b.match);
+    return '<div class="knockout-round"><h3>'+label+'</h3>'+
+      Array.from({length:count},(_,i)=>{
+        const m=matches[i];
+        return '<button type="button" class="bracket-match" '+(m?'data-bracket-round="'+key+'" data-bracket-index="'+i+'"':"disabled")+'>'+
+          '<span class="bracket-match-num">Match '+(i+1)+'</span>'+
+          '<span class="'+(m&&sheetKey(m.winner)===sheetKey(m.p1)?"bracket-winner":"")+'">'+esc(m?.p1||"Draw pending")+'</span>'+
+          '<span class="'+(m&&sheetKey(m.winner)===sheetKey(m.p2)?"bracket-winner":"")+'">'+esc(m?.p2||"—")+'</span>'+
+          '</button>';
+      }).join("")+'</div>';
+  }).join("");
+  $("knockoutDetail").textContent="Select a published match to see details.";
+}
+
 async function refreshData(){
   const status=$("liveStatus");
   const errBox=$("liveError");
@@ -527,6 +561,7 @@ async function refreshData(){
     try{ loaded[name]=await fetchSheet(name); }
     catch(e){ errors.push(e.message||String(e)); }
   }
+  try{loaded["Knockout"]=await fetchSheet("Knockout")}catch{}
   try{
     loaded["Announcements"]=await fetchSheet("Announcements");
     announcementsLoaded=true;
@@ -540,6 +575,7 @@ async function refreshData(){
     scheduleFallbackUsed=true;
   }
   if(loaded["Results recording"])state.results=parseResults(loaded["Results recording"]);
+  state.knockout=loaded["Knockout"]?parseKnockout(loaded["Knockout"]):[];
   const sheetStandings=loaded["Standing"]?parseStandings(loaded["Standing"]):[];
   const calculated=state.groups.length?deriveStandings():[];
   // The Standing tab is already formula-driven; prefer it when it contains
@@ -810,7 +846,7 @@ function removeExpiredPromotions(){
   // Older cached HTML may still contain the removed homepage promotion.
   document.querySelectorAll(".history-panel").forEach(el=>el.remove());
 }
-function renderAll(){removeExpiredPromotions();renderHome();renderSchedule();renderGroups();renderStandings();renderNotifications();renderScoreForm()}
+function renderAll(){removeExpiredPromotions();renderHome();renderSchedule();renderGroups();renderStandings();renderKnockout();renderNotifications();renderScoreForm()}
 removeExpiredPromotions();
 
 document.querySelectorAll(".tab,[data-view='record-score'],[data-view='change-schedule']").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
@@ -832,6 +868,13 @@ document.addEventListener("click",e=>{
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeNotifications()});
 $("homePlayerSearch").addEventListener("input",renderMyMatches);
+$("knockoutBracket").addEventListener("click",e=>{
+  const btn=e.target.closest("[data-bracket-round]");
+  if(!btn)return;
+  const match=state.knockout.filter(x=>x.round===btn.dataset.bracketRound).sort((a,b)=>a.match-b.match)[Number(btn.dataset.bracketIndex)];
+  if(!match)return;
+  $("knockoutDetail").textContent=match.p1+" vs "+match.p2+(match.winner?" · Winner: "+match.winner:" · Awaiting result")+(match.date?" · "+match.date:"")+(match.time?" "+match.time:"");
+});
 $("myMatches").addEventListener("click",e=>{
   const btn=e.target.closest("[data-record-match]");
   if(!btn)return;
