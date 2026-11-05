@@ -18,10 +18,10 @@ const source=[
 ].join('\n');
 const helpers=new Function('sheetKey','scorePair',source+
   ';return {compareRank,unresolvedTie,validateScheduleData,validateResultData,matchTime,pairKey};')(
-  x=>String(x||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').trim().toLowerCase(),
-  s=>{const m=String(s||'').match(/^(\\d+)\\s*[-–:]\\s*(\\d+)$/);return m?[Number(m[1]),Number(m[2])]:null;}
+  x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase(),
+  s=>{const m=String(s||'').match(/^(\d+)\s*[-–:]\s*(\d+)$/);return m?[Number(m[1]),Number(m[2])]:null;}
 );
-const raw=app.match(/const FALLBACK_SCHEDULE=`([\\s\\S]*?)`\\.trim\\(\\)\\.split/);
+const raw=app.match(/const FALLBACK_SCHEDULE=`([\s\S]*?)`\.trim\(\)\.split/);
 assert.ok(raw,'Built-in schedule source missing');
 const fixtures=raw[1].split('\n').map(line=>{
   const [week,date,time,group,p1,p2]=line.split('|');
