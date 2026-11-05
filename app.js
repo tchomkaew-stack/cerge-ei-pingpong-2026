@@ -495,7 +495,8 @@ function unresolvedTie(a,b){return Boolean(a&&b&&compareRank(a,b)===0)}
 function qualificationStatus(player,eligible,wc){
   const rank=eligible.findIndex(x=>sheetKey(x.player)===sheetKey(player.player));
   if(rank<0)return "";
-  if(rank<2)return unresolvedTie(eligible[1],eligible[2])?"Tie — decision pending":"Automatic position";
+  if(rank===0)return unresolvedTie(eligible[0],eligible[2])?"Tie — decision pending":"Automatic position";
+  if(rank===1)return unresolvedTie(eligible[1],eligible[2])?"Tie — decision pending":"Automatic position";
   if(rank===2&&unresolvedTie(eligible[1],eligible[2]))return "Tie — decision pending";
   const wi=wc.findIndex(x=>sheetKey(x.player)===sheetKey(player.player));
   if(wi>=0&&wi<2)return unresolvedTie(wc[1],wc[2])?"Tie — decision pending":"Wildcard position";
@@ -1033,7 +1034,7 @@ function renderStandings(){
   el.innerHTML="ABCDEFG".split("").map(g=>{
     const a=state.standings.filter(x=>x.group===g).sort(compareRank);
     const eligible=e[g]||[];
-    const q=new Set(unresolvedTie(eligible[1],eligible[2])?[]:eligible.slice(0,2).map(x=>x.player));
+    const q=new Set(eligible.slice(0,2).filter(x=>qualificationStatus(x,eligible,wc)==="Automatic position").map(x=>x.player));
     return `<div class="group-standing"><div class="group-title">Group ${g}</div><div class="table-wrap"><table><thead><tr><th>#</th><th>Player</th><th title="Wins">W</th><th title="Losses">L</th><th title="Matches played">P</th><th title="Win rate">Win%</th><th title="Share of games won">Set%</th><th>KO eligibility</th></tr></thead><tbody>${a.map((x,i)=>`<tr class="${q.has(x.player)?"rank-auto":""}"><td>${i>0&&unresolvedTie(a[i-1],x)?"=":i+1}</td><td>${esc(x.player)} ${qualificationStatus(x,eligible,wc)==="Tie — decision pending"?'<span class="badge">Tie · decision pending</span>':q.has(x.player)?(finished&&!pendingTies?'<span class="badge qual">Qualified</span>':'<span class="badge qual">In position</span>'):""}</td><td>${x.wins}</td><td>${x.losses}</td><td>${x.matches}</td><td>${pct(x.winRate)}</td><td>${pct(x.setRatio)}</td><td><span class="eligibility-tag ${x.matches>=3?"eligible":"not-yet"}">${x.matches>=3?"Eligible":Math.min(x.matches,3)+"/3 played"}</span></td></tr>`).join("")}</tbody></table></div></div>`;
   }).join("");
   const context=$("wildcardContext");
@@ -1050,7 +1051,7 @@ function renderStandings(){
   }
   $("wildcardTable").innerHTML=`<div class="table-wrap"><table><thead><tr><th>#</th><th>Group</th><th>Player</th><th>W</th><th>P</th><th>Win%</th><th>Set%</th><th>PD</th></tr></thead><tbody>${wc.map((x,i)=>`<tr class="${i<2&&!unresolvedTie(wc[1],wc[2])?"rank-wild":""}"><td>${i>0&&unresolvedTie(wc[i-1],x)?"=":i+1}</td><td>${x.group}</td><td>${esc(x.player)}</td><td>${x.wins}</td><td>${x.matches}</td><td>${pct(x.winRate)}</td><td>${pct(x.setRatio)}</td><td>${x.pointDiff}</td></tr>`).join("")}</tbody></table></div>`;
   const q=[];for(const g of "ABCDEFG"){
-    if(e[g]?.[0]&&!unresolvedTie(e[g][1],e[g][2]))q.push([g+"1",e[g][0].player]);
+    if(e[g]?.[0]&&!unresolvedTie(e[g][0],e[g][2]))q.push([g+"1",e[g][0].player]);
     if(e[g]?.[1]&&!unresolvedTie(e[g][1],e[g][2]))q.push([g+"2",e[g][1].player]);
     if(unresolvedTie(e[g]?.[1],e[g]?.[2]))q.push([g+"2","Tie — decision pending"]);
   }
