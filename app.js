@@ -747,7 +747,12 @@ async function submitScoreForm(e){
   finally{scoreSubmitting=false;validateScoreForm()}
 }
 
-function renderAll(){renderHome();renderSchedule();renderGroups();renderStandings();renderNotifications();renderScoreForm()}
+function removeExpiredPromotions(){
+  // Older cached HTML may still contain the removed homepage promotion.
+  document.querySelectorAll(".history-panel").forEach(el=>el.remove());
+}
+function renderAll(){removeExpiredPromotions();renderHome();renderSchedule();renderGroups();renderStandings();renderNotifications();renderScoreForm()}
+removeExpiredPromotions();
 
 document.querySelectorAll(".tab,[data-view='record-score'],[data-view='change-schedule']").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
 $("notificationBtn")?.addEventListener("click",()=>{
