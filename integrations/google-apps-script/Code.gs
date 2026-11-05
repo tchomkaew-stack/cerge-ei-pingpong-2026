@@ -1,6 +1,6 @@
 /**
  * @OnlyCurrentDoc
- * CERGE-EI Ping Pong League 2026: authorized score recording bridge.
+ * CERGE-EI Ping Pong League 2026: simple participant score recording bridge.\n * Players do not need an account or PIN. The shared secret is server-side only.
  * Deploy as a Google Apps Script Web App, executing as the Sheet owner.
  * Set Script Property SCORE_WRITE_SECRET to exactly the same random secret
  * as Cloudflare Pages' SCORE_WRITE_SECRET secret variable.
@@ -43,7 +43,11 @@ function doPost(e) {
     if(!/^[A-G]$/.test(String(body.group||'')))throw Error('Invalid group.');
     const p1=String(body.p1||'').trim(),p2=String(body.p2||'').trim();
     if(!p1 || !p2 || normalized_(p1)===normalized_(p2)) throw Error('Invalid players.');
-    const data=validateScores_(body.scores);
+    const isForfeit=body.forfeit===true;
+    if(body.forfeit!==true&&body.forfeit!==false)throw Error('Invalid result type.');
+    const data=isForfeit?null:validateScores_(body.scores);
+    if(isForfeit && (!body.winner || ![normalized_(p1),normalized_(p2)].includes(normalized_(body.winner)) ||
+       (Array.isArray(body.scores)&&body.scores.length)))throw Error('Choose a valid forfeit winner and leave scores empty.');
     const ss=SpreadsheetApp.getActiveSpreadsheet();
     if (!ss || ss.getId() !== '1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI') throw Error('This script must be bound to the tournament spreadsheet.');
     const sheet=ss.getSheetByName(SCORE_SHEET);
@@ -65,14 +69,44 @@ function doPost(e) {
     }
     if(found<0)throw Error('Match not found in Results recording. Ask the organizer to check the schedule.');
     const row=all[found];
-    if(String(row[11]).trim() || row.slice(6,11).some(v=>String(v).trim()))
-      throw Error('This match already has a result. Ask the organizer to correct it.');
-    const winner=data.wins[0]===3 ? String(row[4]).trim() : String(row[5]).trim();
-    // Write exactly G:K (scores) and L (winner); preserve column M formulas.
-    sheet.getRange(found+1,7,1,5).setValues([Array.from({length:5},(_,i)=>data.strings[i]||'')]);
+    const before={
+      scores:row.slice(6,11),
+      winner:String(row[11]||''),
+      forfeit:''
+    };
+    // The sheet's set-score formula in M is never overwritten.
+    // Keep the forfeit flag in a dedicated named column, creating it at the end if needed.
+    const headers=all[headings].map(normalized_);
+    let forfeitCol=headers.findIndex(x=>x==='forfeit (y/n)'||x==='forfeit'||x==='forfeit y/n')+1;
+    if(!forfeitCol){
+      forfeitCol=Math.max(sheet.getLastColumn()+1,14);
+      sheet.getRange(headings+1,forfeitCol).setValue('Forfeit (Y/N)');
+    }
+    before.forfeit=String(sheet.getRange(found+1,forfeitCol).getDisplayValue()||'');
+    const winner=isForfeit
+      ? (normalized_(body.winner)===normalized_(p1)?String(row[4]).trim():String(row[5]).trim())
+      : (data.wins[0]===3?String(row[4]).trim():String(row[5]).trim());
+    const scores=isForfeit?Array(5).fill(''):Array.from({length:5},(_,i)=>data.strings[i]||'');
+    const setScore=isForfeit?'':data.wins.join('-');
+    sheet.getRange(found+1,7,1,5).setValues([scores]);
     sheet.getRange(found+1,12).setValue(winner);
+    sheet.getRange(found+1,forfeitCol).setValue(isForfeit?'Y':'N');
     SpreadsheetApp.flush();
-    return respond_({ok:true,winner,setScore:data.wins.join('-')});
+    // Record the previous and new values for transparent, self-service corrections.
+    let auditLogged=true,auditWarning='';
+    try{
+      let audit=ss.getSheetByName('Result change history');
+      if(!audit){
+        audit=ss.insertSheet('Result change history');
+        audit.appendRow(['Timestamp','Group','Player 1','Player 2','Previous scores','Previous winner','Previous forfeit','New scores','New winner','New forfeit']);
+      }
+      audit.appendRow([new Date(),body.group,p1,p2,before.scores.join(' | '),before.winner,before.forfeit,scores.join(' | '),winner,isForfeit?'Y':'N']);
+    }catch(auditError){
+      auditLogged=false;
+      auditWarning='Result saved, but change history could not be recorded: '+String(auditError.message||auditError);
+    }
+    return respond_({ok:true,winner,setScore,forfeit:isForfeit,auditLogged,auditWarning});
+
   } catch (err) {
     return respond_({ok:false,error:String(err.message||err)});
   } finally {
