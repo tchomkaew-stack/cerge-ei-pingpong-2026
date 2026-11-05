@@ -608,83 +608,103 @@ function renderKnockout(){
   $("knockoutDetail").textContent="Select a published match to see details.";
 }
 
+let refreshInFlight=null;
+let lastRefreshAt=0;
 async function refreshData(){
-  const status=$("liveStatus");
-  const errBox=$("liveError");
-  status.textContent="Connecting to live sheet…";status.className="status-pill";
-  if(errBox){errBox.style.display="none";errBox.textContent="";}
+  if(refreshInFlight)return refreshInFlight;
+  refreshInFlight=(async()=>{
+    const status=$("liveStatus"),errBox=$("liveError"),checked=$("lastUpdated"),refreshBtn=$("refreshBtn");
+    if(refreshBtn)refreshBtn.disabled=true;
+    status.textContent="Checking Google Sheets…";
+    status.className="status-pill";
+    if(errBox){errBox.style.display="none";errBox.textContent=""}
 
-  const names=["Groups","Schedule","Results recording","Standing"];
-  const loaded={};
-  const errors=[];
-  let announcementsLoaded=false;
+    const core=["Groups","Schedule","Results recording","Standing"];
+    const names=[...core,"Knockout","Announcements"];
+    const responses=await Promise.allSettled(names.map(name=>fetchSheet(name)));
+    const loaded={};
+    const errors=[];
+    responses.forEach((response,i)=>{
+      if(response.status==="fulfilled")loaded[names[i]]=response.value;
+      else if(core.includes(names[i]))errors.push(names[i]+": "+String(response.reason?.message||response.reason));
+    });
 
-  for(const name of names){
-    try{ loaded[name]=await fetchSheet(name); }
-    catch(e){ errors.push(e.message||String(e)); }
-  }
-  try{loaded["Knockout"]=await fetchSheet("Knockout")}catch{}
-  try{
-    loaded["Announcements"]=await fetchSheet("Announcements");
-    announcementsLoaded=true;
-  }catch{}
+    if(loaded.Groups){
+      const parsed=parseGroups(loaded.Groups);
+      if(parsed.length)state.groups=parsed;
+      else errors.push("Groups: no players found in live data");
+    }
 
-  if(loaded["Groups"]) state.groups=parseGroups(loaded["Groups"]);
-  let scheduleFallbackUsed=false;
-  if(loaded["Schedule"]) state.schedule=parseSchedule(loaded["Schedule"]);
-  if(!state.schedule.length){
-    state.schedule=FALLBACK_SCHEDULE;
-    scheduleFallbackUsed=true;
-  }
-  if(loaded["Results recording"])state.results=parseResults(loaded["Results recording"]);
-  state.knockout=loaded["Knockout"]?parseKnockout(loaded["Knockout"]):[];
-  const sheetStandings=loaded["Standing"]?parseStandings(loaded["Standing"]):[];
-  const calculated=state.groups.length?deriveStandings():[];
-  // The Standing tab is already formula-driven; prefer it when it contains
-  // recorded matches, but retain a score-derived fallback for recalculation delays.
-  const sheetHasMatches=sheetStandings.some(x=>x.matches>0||x.wins>0);
-  const calculatedHasMatches=calculated.some(x=>x.matches>0);
-  state.standings=sheetHasMatches && (!calculatedHasMatches ||
-    sheetStandings.reduce((n,x)=>n+x.matches,0)>=calculated.reduce((n,x)=>n+x.matches,0))
-    ?sheetStandings:calculated.length?calculated:sheetStandings;
-  if(state.standings.length===0 && sheetStandings.length)state.standings=sheetStandings;
-  const sheetAnnouncements=announcementsLoaded?parseAnnouncements(loaded["Announcements"]):[];
-  const mergedAnnouncements=[...FALLBACK_ANNOUNCEMENTS];
-  for(const a of sheetAnnouncements){
-    const i=mergedAnnouncements.findIndex(x=>x.id===a.id);
-    if(i>=0)mergedAnnouncements[i]=a;else mergedAnnouncements.push(a);
-  }
-  state.announcements=mergedAnnouncements;
+    let scheduleFresh=false;
+    if(loaded.Schedule){
+      const parsed=parseSchedule(loaded.Schedule);
+      if(parsed.length){state.schedule=parsed;scheduleFresh=true}
+      else errors.push("Schedule: no valid fixtures found in live data");
+    }
+    // Do not replace an already loaded live schedule with old defaults on a network error.
+    let scheduleCached=false;
+    if(!scheduleFresh){
+      scheduleCached=true;
+      if(!state.schedule.length)state.schedule=FALLBACK_SCHEDULE;
+    }
+    if(loaded["Results recording"])state.results=parseResults(loaded["Results recording"]);
+    if(loaded.Knockout)state.knockout=parseKnockout(loaded.Knockout);
+    const sheetStandings=loaded.Standing?parseStandings(loaded.Standing):[];
+    const calculated=state.groups.length?deriveStandings():[];
+    const sheetHasMatches=sheetStandings.some(x=>x.matches>0||x.wins>0);
+    const calculatedHasMatches=calculated.some(x=>x.matches>0);
+    if(loaded.Standing||loaded["Results recording"]){
+      state.standings=sheetHasMatches && (!calculatedHasMatches ||
+        sheetStandings.reduce((n,x)=>n+x.matches,0)>=calculated.reduce((n,x)=>n+x.matches,0))
+        ?sheetStandings:calculated.length?calculated:sheetStandings;
+    }
+    if(loaded.Announcements){
+      const merged=[...FALLBACK_ANNOUNCEMENTS];
+      for(const notice of parseAnnouncements(loaded.Announcements)){
+        const index=merged.findIndex(x=>x.id===notice.id);
+        if(index>=0)merged[index]=notice;else merged.push(notice);
+      }
+      state.announcements=merged;
+    }else if(!state.announcements.length){
+      state.announcements=[...FALLBACK_ANNOUNCEMENTS];
+    }
 
-  const coreOk=state.groups.length>0 && state.schedule.length>0;
-  const recordedMatches=state.results.length;
-  status.dataset.results=String(recordedMatches);
-  status.dataset.standings=String(state.standings.length);
-  if(state.groups.length && !recordedMatches && !sheetHasMatches && loaded["Results recording"]){
-    status.title="No completed results detected in live Results recording sheet";
-  }
-  if(coreOk && errors.length===0 && !scheduleFallbackUsed){
-    status.textContent="Live updates";
-    status.className="status-pill live";
-    status.title="Groups "+state.groups.length+" • Schedule "+state.schedule.length+" • Results "+state.results.length+" • Standings "+state.standings.length;
-  }else if(coreOk && scheduleFallbackUsed && errors.length===0){
-    status.textContent="Live updates";
-    status.className="status-pill live";
-    status.title="Groups live • Schedule cached from audited tournament workbook • Results/standings live when available";
-    if(errBox){errBox.style.display="none";errBox.textContent="";}
-  }else if(coreOk){
-    status.textContent="Live updates limited";
-    status.className="status-pill fallback";
-    status.title=errors.join("\n");
-    if(errBox){errBox.style.display="block";errBox.textContent=errors.join(" | ");}
-  }else{
-    status.textContent="Live data unavailable";
-    status.className="status-pill fallback";
-    status.title=(errors.length?errors.join("\n"):"Parsed Groups "+state.groups.length+", Schedule "+state.schedule.length);
-    if(errBox){errBox.style.display="block";errBox.textContent=(errors.length?errors.join(" | "):"Parsed Groups "+state.groups.length+", Schedule "+state.schedule.length);}
-    console.error("Live data diagnostics:",errors,{groups:state.groups.length,schedule:state.schedule.length,results:state.results.length,standings:state.standings.length});
-  }
-  renderAll();
+    const coreOk=state.groups.length>0&&state.schedule.length>0;
+    const liveCore=core.every(name=>Boolean(loaded[name]))&&scheduleFresh;
+    status.dataset.results=String(state.results.length);
+    status.dataset.standings=String(state.standings.length);
+    if(coreOk&&liveCore&&errors.length===0){
+      status.textContent="Live updates";
+      status.className="status-pill live";
+    }else if(coreOk){
+      status.textContent=scheduleCached?"Schedule cached · check before playing":"Live updates limited";
+      status.className="status-pill fallback";
+    }else{
+      status.textContent="Live data unavailable";
+      status.className="status-pill fallback";
+    }
+    const warning=[
+      ...(scheduleCached?["The latest schedule could not be confirmed. Dates may have changed — use the Google Sheet or Refresh before playing."]:[]),
+      ...errors.filter(e=>!scheduleCached||!e.startsWith("Schedule:"))
+    ];
+    if(errBox&&warning.length){
+      errBox.style.display="block";
+      errBox.textContent=warning.join(" | ");
+    }
+    const now=new Date();
+    lastRefreshAt=Date.now();
+    if(checked){
+      const time=new Intl.DateTimeFormat("en-GB",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Prague"}).format(now);
+      checked.textContent="Checked "+time+" Prague time"+(liveCore?"":" · some data may be older");
+    }
+    status.title=liveCore
+      ?"Groups "+state.groups.length+" · Schedule "+state.schedule.length+" · Results "+state.results.length+" · Standings "+state.standings.length
+      :warning.join("\n");
+    renderAll();
+    if(refreshBtn)refreshBtn.disabled=false;
+  })();
+  try{return await refreshInFlight}
+  finally{refreshInFlight=null}
 }
 
 function renderFeaturedRematches(){
@@ -975,6 +995,12 @@ $("scheduleSearch").addEventListener("input",renderSchedule);
 $("groupFilter").addEventListener("change",renderSchedule);
 $("weekFilter").addEventListener("change",renderSchedule);
 $("refreshBtn").addEventListener("click",refreshData);
+document.addEventListener("visibilitychange",()=>{
+  if(!document.hidden&&!scoreSubmitting&&Date.now()-lastRefreshAt>60000)refreshData();
+});
+window.addEventListener("focus",()=>{
+  if(!document.hidden&&!scoreSubmitting&&Date.now()-lastRefreshAt>60000)refreshData();
+});
 $("scoreMatchSelect")?.addEventListener("change",()=>{document.querySelectorAll("#scoreGames input").forEach(x=>x.value="");showScoreMatch()});
 $("scoreGames")?.addEventListener("input",()=>{$("scoreEntryFeedback").textContent="";validateScoreForm()});
 $("scoreResultType")?.addEventListener("change",()=>{$("scoreEntryFeedback").textContent="";updateScoreEntryType()});
