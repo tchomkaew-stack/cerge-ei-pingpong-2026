@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="CERGE-EI Ping Pong League 2026 tournament hub: schedule, standings, groups, results and rules.">
   <title>CERGE-EI Ping Pong League 2026</title>
-  <link rel="stylesheet" href="styles.css?v=20261105-player-utility-v1">
+  <link rel="stylesheet" href="styles.css?v=20261105-league-improvements-v3">
 </head>
 <body>
+<a class="skip-link" href="#mainContent">Skip to tournament content</a>
 <header class="hero">
   <div class="hero-court" aria-hidden="true"></div>
   <!-- Stylized Charles Bridge: stone arches, bridge towers, statues, Prague Castle behind. -->
@@ -108,7 +109,7 @@
 </header>
 
 <nav class="tabs" aria-label="Tournament navigation">
-  <button class="tab active" data-view="home">Home</button>
+  <button class="tab active" data-view="home" aria-current="page">Home</button>
   <button class="tab" data-view="schedule">Schedule</button>
   <button class="tab" data-view="results">Results</button>
   <button class="tab" data-view="standings">Standings</button>
@@ -140,7 +141,7 @@
   <div id="notificationList" class="notification-list"></div>
 </aside>
 
-<main>
+<main id="mainContent">
   <section id="home" class="view active">
     <div class="status-row">
       <div class="live-cluster">
@@ -166,11 +167,15 @@
       <div id="myMatches" class="match-list"></div>
     </section>
 
-    <div class="stat-grid compact-stats">
-      <article class="stat-card"><span>Players</span><strong>42</strong></article>
-      <article class="stat-card"><span>Groups</span><strong>7</strong></article>
-      <article class="stat-card"><span>Matches</span><strong>105</strong></article>
-      <article class="stat-card"><span>Knockout</span><strong>16</strong></article>
+    <div class="two-col home-columns">
+      <section class="panel">
+        <h2>Today &amp; next matches</h2>
+        <div id="nextMatches" class="stack"></div>
+      </section>
+      <section class="panel">
+        <div class="home-results-heading"><h2>Recorded results</h2><button class="text-action" type="button" data-view="results">View all results</button></div>
+        <div id="latestResults" class="stack muted-empty">No results recorded yet.</div>
+      </section>
     </div>
 
     <section class="panel tournament-progress" aria-label="Tournament progress">
@@ -178,6 +183,13 @@
       <div id="progressTrack" class="progress-track" role="progressbar" aria-label="Group-stage matches completed" aria-valuemin="0" aria-valuemax="105" aria-valuenow="0"><div id="progressFill" class="progress-fill"></div></div>
       <div id="groupProgress" class="group-progress"></div>
     </section>
+
+    <div class="stat-grid compact-stats">
+      <article class="stat-card"><span>Players</span><strong>42</strong></article>
+      <article class="stat-card"><span>Groups</span><strong>7</strong></article>
+      <article class="stat-card"><span>Matches</span><strong>105</strong></article>
+      <article class="stat-card"><span>Knockout</span><strong>16</strong></article>
+    </div>
 
     <section id="featuredRematchesPanel" class="panel featured-rematches" aria-label="Upcoming rematches from 2025" hidden>
       <div class="section-heading">
@@ -190,16 +202,10 @@
       <div id="featuredRematchesList" class="rematch-feature-grid"></div>
     </section>
 
-    <div class="two-col home-columns">
-      <section class="panel">
-        <h2>Next matches</h2>
-        <div id="nextMatches" class="stack"></div>
-      </section>
-      <section class="panel">
-        <div class="home-results-heading"><h2>Recorded results</h2><button class="text-action" type="button" data-view="results">View all results</button></div>
-        <div id="latestResults" class="stack muted-empty">No results recorded yet.</div>
-      </section>
-    </div>
+    <section id="aroundLeaguePanel" class="panel around-league" aria-label="Tournament highlights and milestones" hidden>
+      <div class="section-heading"><div><span class="section-label">AROUND THE LEAGUE</span><h2>Little moments, big matches</h2><p>Selected highlights from recorded results.</p></div></div>
+      <div id="aroundLeague" class="league-story-list"></div>
+    </section>
 
     <section class="panel qualification-strip">
       <div>
@@ -213,7 +219,7 @@
   <section id="schedule" class="view">
     <section class="panel">
       <div class="section-heading">
-        <div><h2>Group-stage schedule</h2><p>Pre-scheduled default times. Players may reschedule by mutual agreement.</p></div>
+        <div><h2>Group-stage schedule</h2><p>Pre-scheduled default times, shown in Prague time. Players may reschedule by mutual agreement.</p></div>
       </div>
       <p id="scheduleSourceNotice" class="data-source-warning" role="status" hidden></p>
       <p class="schedule-priority-line">Default times are there to make scheduling easy — if you cannot make yours, study and work come first, so please contact your opponent and arrange a new time.</p>
@@ -239,7 +245,7 @@
   <section id="results" class="view">
     <section class="panel">
       <div class="section-heading">
-        <div><h2>Recorded results</h2><p>Explore completed matches and game-by-game scores from Google Sheets.</p></div>
+        <div><h2>Recorded results</h2><p>Explore completed matches and game-by-game scores from Google Sheets. Latest recorded updates appear first when a timestamp is available.</p></div>
       </div>
       <div class="filters">
         <input id="resultsSearch" class="search" type="search" aria-label="Search recorded results by player" placeholder="Search a player…">
@@ -331,7 +337,7 @@
         <li>Set ratio</li>
         <li>Point differential</li>
       </ol>
-      <p>If players remain exactly tied after all four ranking criteria, the Sports Representative will resolve the tie fairly, consulting the players involved if useful.</p>
+      <p>If players remain exactly tied after all four ranking criteria, the standings show a pending decision rather than breaking the tie alphabetically. The Sports Representative will resolve it fairly, consulting the players involved if useful.</p>
 
       <h3>Eligibility & qualification</h3>
       <ul>
@@ -465,7 +471,7 @@
     <section class="panel score-guide">
       <span class="section-label">FOR PLAYERS · QUICK GUIDE</span>
       <h2 id="scoreGuideTitle">Record your match result</h2>
-      <p class="score-lead">Choose your match and enter the game scores or a forfeit winner. You can submit again to correct a result; the new result replaces the previous one in Google Sheets.</p>
+      <p class="score-lead">Choose your match and enter the game scores or a forfeit winner. You can correct an existing result yourself by submitting it again. No login or PIN is required.</p>
       <div class="score-entry-shell">
         <div id="scoreEntryAvailability" class="score-entry-notice" role="status">Checking score submission availability…</div>
         <form id="scoreEntryForm" class="score-entry-form" autocomplete="off">
@@ -582,7 +588,7 @@
   <p>CERGE-EI Ping Pong League 2026 · Made for the CERGE-EI community in Prague</p>
 </footer>
 
-<script src="app.js?v=20261105-player-utility-v1"></script>
+<script src="app.js?v=20261105-league-improvements-v3"></script>
   <!-- Cloudflare Web Analytics --><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"cf4b67f5c23d4509a9bf91c446bc2d6f"}'></script><!-- End Cloudflare Web Analytics -->
   <!-- deploy-refresh: 2026-11-02T17:20+01:00 -->
 </body>
