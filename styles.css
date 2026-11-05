@@ -1026,3 +1026,20 @@ footer::before{
   .rematch-history{padding:9px;gap:5px 8px}
   .rematch-story{flex-basis:100%}
 }
+
+/* Homepage rematch watch — visible only for scheduled, unrecorded rematches */
+.featured-rematches[hidden]{display:none!important}
+.featured-rematches .section-heading{margin-bottom:17px}
+.rematch-feature-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.rematch-feature-card{border:1px solid #e1e6f0;border-radius:14px;background:linear-gradient(155deg,#fff 60%,#faf8fd);padding:17px;min-width:0}
+.rematch-feature-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.rematch-feature-date{font-size:.71rem;font-weight:700;color:var(--muted)}
+.rematch-feature-players{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:16px 0 13px;font-size:.93rem;line-height:1.25;color:var(--navy)}
+.rematch-feature-players strong{min-width:0;overflow-wrap:anywhere;flex:1}
+.rematch-feature-players strong:last-child{text-align:right}
+.rematch-feature-players span{font-size:.7rem;color:var(--crimson);background:#fff0f4;border-radius:999px;padding:4px 6px;font-weight:800}
+.rematch-feature-story{font-size:.83rem;line-height:1.55;margin:0 0 10px;color:var(--ink)}
+.rematch-feature-time,.rematch-feature-note{font-size:.75rem;color:var(--muted);margin:0;line-height:1.5}
+.rematch-feature-note{color:#795d28}
+@media(max-width:860px){.rematch-feature-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.rematch-feature-grid{grid-template-columns:1fr}.rematch-feature-players{margin:12px 0}}
