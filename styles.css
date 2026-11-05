@@ -1001,3 +1001,28 @@ footer::before{
 .knockout-detail{border-radius:10px;background:#f4f7fb;padding:12px;margin-top:18px;color:var(--navy);font-size:.87rem}
 .tab[hidden],.view[hidden]{display:none!important}
 @media(max-width:850px){.knockout-bracket{grid-template-columns:repeat(4,190px)}}
+
+/* 2025 historical rematches — only displayed on unrecorded, upcoming fixtures. */
+.rematch-history{
+  display:flex;flex-wrap:wrap;align-items:center;gap:5px 10px;
+  margin:12px 0 0 7px;padding:10px 12px;
+  border:1px solid #e5e5f0;border-radius:10px;background:#f8f9fd;
+  font-size:.79rem;line-height:1.5;color:var(--navy);
+}
+.rematch-tag{
+  display:inline-flex;align-items:center;flex-shrink:0;
+  padding:3px 8px;border-radius:999px;background:#eee9f6;
+  color:#554276;font-size:.68rem;font-weight:850;letter-spacing:.035em;
+  text-transform:uppercase;white-space:nowrap;
+}
+.rematch-story{font-weight:650;flex:1 1 180px}
+.rematch-time-note{flex-basis:100%;font-size:.72rem;color:var(--muted)}
+.rematch-history-compact{
+  display:flex;align-items:flex-start;gap:5px;margin:7px 0 0;
+  padding:0;border:0;background:transparent;font-size:.75rem;
+}
+.rematch-history-compact .rematch-story{flex:1 1 150px;font-weight:550}
+@media(max-width:560px){
+  .rematch-history{padding:9px;gap:5px 8px}
+  .rematch-story{flex-basis:100%}
+}
