@@ -1043,3 +1043,58 @@ footer::before{
 .rematch-feature-note{color:#795d28}
 @media(max-width:860px){.rematch-feature-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.rematch-feature-grid{grid-template-columns:1fr}.rematch-feature-players{margin:12px 0}}
+
+/* Prague × ping pong: subtle, responsive vector art and small UI refinements. */
+.hero-prague-art{
+  position:absolute;right:-18px;bottom:-12px;z-index:0;
+  width:min(62vw,760px);height:auto;max-height:100%;
+  color:#c4d7e9;opacity:.22;pointer-events:none;
+}
+.hero-copy{min-width:0}
+.hero-kicker{letter-spacing:.15em}
+.tagline{font-weight:650;color:#f0f4fa;letter-spacing:.005em}
+.hero-subline{margin:7px 0 0;color:#cfdbeb;font-size:.9rem}
+.hero-values span{border-color:rgba(255,255,255,.18)}
+.panel{transition:border-color .18s ease}
+.tab:focus-visible,.nav-action:focus-visible,.notification-btn:focus-visible,
+.secondary-btn:focus-visible,.mobile-actions button:focus-visible,
+button:focus-visible,a:focus-visible{outline:3px solid #d7b269;outline-offset:3px}
+.tabs{scrollbar-width:thin;scrollbar-color:#cbd4df transparent}
+.view{scroll-margin-top:90px}
+@media(max-width:1000px){
+  .hero-prague-art{width:min(70vw,680px);opacity:.17;right:-90px}
+}
+@media(max-width:850px){
+  .hero-prague-art{width:min(85vw,600px);right:-125px;bottom:8px;opacity:.13}
+  .hero-inner{padding-top:38px;padding-bottom:32px}
+}
+@media(max-width:560px){
+  .hero{border-top-width:2px}
+  .hero-prague-art{width:420px;max-width:none;right:-210px;bottom:75px;opacity:.14}
+  .hero-inner{padding:29px 18px 26px;gap:14px}
+  .hero-title-row{gap:8px;align-items:center}
+  .hero-title-row h1 span{font-size:clamp(1.8rem,7.5vw,2.5rem)}
+  .hero-title-row h1 strong{font-size:clamp(1.9rem,8.3vw,2.75rem)}
+  .hero-kicker{font-size:.66rem;letter-spacing:.12em}
+  .season-chip{font-size:.62rem;min-height:27px;padding:4px 8px}
+  .tagline{font-size:.93rem;margin-top:13px}
+  .hero-subline{font-size:.82rem}
+  .hero-values{margin-top:13px;gap:6px}
+  .hero-values span{font-size:.68rem;padding:4px 8px;min-height:26px}
+  .hero-side{margin-top:2px}
+  .hall-of-fame{padding:11px 13px}
+  .hof-row{grid-template-columns:38px minmax(0,1fr) auto;gap:6px}
+  .hof-crown{grid-column:auto;font-size:.63rem}
+  .hof-row strong{min-width:0;overflow-wrap:anywhere}
+  .panel h2{font-size:1.2rem}
+  .stat-grid{gap:8px}
+  .stat-card{gap:6px}
+  .stat-card span{font-size:.76rem}
+  .stat-card strong{font-size:1.4rem}
+}
+@media(max-width:360px){
+  .hero-title-row h1 strong{font-size:1.85rem}
+  .hero-title-row h1 span{font-size:1.75rem}
+  .season-chip{font-size:.58rem}
+  .hero-prague-art{right:-235px}
+}
