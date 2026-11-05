@@ -468,6 +468,50 @@ function fmtDate(s){
 function pairKey(g,a,b){return g+":"+[a,b].sort().join("|")}
 function matchCard(m){return `<div class="match-card"><div class="match-meta">${esc(fmtDate(m.date))} • ${esc(m.time)} • Group ${m.group} • Week ${m.week}</div><div class="match-main"><span>${esc(m.p1)}</span><b>vs</b><span>${esc(m.p2)}</span></div></div>`}
 
+
+function resultForMatch(m){return state.results.find(r=>pairKey(r.group,r.p1,r.p2)===pairKey(m.group,m.p1,m.p2))}
+function matchTime(m){
+  const d=new Date((m.date||"")+"T"+(m.time||"00:00")+":00");
+  return Number.isNaN(d.getTime())?Infinity:d.getTime();
+}
+function matchCardWithStatus(m){
+  const r=resultForMatch(m),label=r?"Recorded"+(r.forfeit==="Y"?" · forfeit":""):"Awaiting result";
+  return '<div class="match-with-action">'+matchCard(m)+'<div class="match-action-row"><span class="match-status '+(r?"completed":"pending")+'">'+label+'</span>'+
+    (r?'<span class="match-result-note">'+esc(r.winner)+' won · '+esc(r.forfeit==="Y"?"Forfeit":r.setScore||"Result recorded")+'</span>':"")+
+    '<button class="mini-action" type="button" data-record-match="'+esc(scoreMatchKey(m))+'">'+(r?"Correct result":"Record result")+'</button></div></div>';
+}
+function renderProgress(){
+  const all=[...new Set(state.schedule.map(m=>pairKey(m.group,m.p1,m.p2)))];
+  const done=new Set(state.results.map(r=>pairKey(r.group,r.p1,r.p2)));
+  const count=all.filter(k=>done.has(k)).length,pctDone=all.length?Math.round(count/all.length*100):0;
+  $("progressSummary").textContent=count+" of "+all.length+" matches recorded";
+  $("progressPercent").textContent=pctDone+"%";
+  $("progressFill").style.width=pctDone+"%";
+  $("progressTrack").setAttribute("aria-valuemax",String(all.length||105));
+  $("progressTrack").setAttribute("aria-valuenow",String(count));
+  $("groupProgress").innerHTML="ABCDEFG".split("").map(g=>{
+    const keys=[...new Set(state.schedule.filter(m=>m.group===g).map(m=>pairKey(m.group,m.p1,m.p2)))];
+    const n=keys.filter(k=>done.has(k)).length;
+    return '<div class="group-progress-item"><div><strong>Group '+g+'</strong><span>'+n+'/'+keys.length+'</span></div>'+
+      '<div class="group-progress-track"><div style="width:'+(keys.length?Math.round(n/keys.length*100):0)+'%"></div></div></div>';
+  }).join("");
+}
+function renderPlayerDashboard(players){
+  const el=$("playerDashboard");
+  if(players.length!==1){el.innerHTML=players.length>1?'<p class="small-note">Multiple players match. Type more of the name for an individual summary.</p>':"";return}
+  const player=players[0],matches=state.schedule.filter(m=>m.p1===player||m.p2===player);
+  const played=matches.filter(m=>Boolean(resultForMatch(m))).length;
+  const standing=state.standings.find(x=>sheetKey(x.player)===sheetKey(player));
+  const group=state.groups.find(x=>x.player===player)?.group||matches[0]?.group||"";
+  const currentTop=played>=3&&(eligibleByGroup()[group]||[]).slice(0,2).some(x=>sheetKey(x.player)===sheetKey(player));
+  const qualification=played<3?played+" of 3 matches played toward knockout qualification":
+    currentTop?"Currently in an automatic qualifying position":"Knockout minimum reached · rankings still evolving";
+  el.innerHTML='<div class="player-summary"><div class="player-summary-head"><div><span class="section-label">YOUR TOURNAMENT</span><h3>'+esc(player)+'</h3><p>Group '+esc(group)+' · '+esc(qualification)+'</p></div>'+
+    '<span class="player-match-counter">'+played+'/'+matches.length+' matches</span></div>'+
+    '<div class="player-summary-stats"><span><strong>'+(standing?.wins??0)+'</strong> wins</span><span><strong>'+(standing?.losses??0)+'</strong> losses</span>'+
+    '<span><strong>'+Math.max(0,matches.length-played)+'</strong> remaining</span><span><strong>'+Math.min(played,3)+'/3</strong> knockout minimum</span></div></div>';
+}
+
 async function refreshData(){
   const status=$("liveStatus");
   const errBox=$("liveError");
@@ -546,17 +590,27 @@ async function refreshData(){
 }
 function renderHome(){
   const done=new Set(state.results.map(r=>pairKey(r.group,r.p1,r.p2)));
-  const next=state.schedule.filter(m=>!done.has(pairKey(m.group,m.p1,m.p2))).slice(0,6);
-  $("nextMatches").innerHTML=next.length?next.map(matchCard).join(""):"All group-stage matches completed.";
+  const remaining=state.schedule.filter(m=>!done.has(pairKey(m.group,m.p1,m.p2)));
+  const now=Date.now();
+  const future=remaining.filter(m=>matchTime(m)>=now).sort((a,b)=>matchTime(a)-matchTime(b));
+  const past=remaining.filter(m=>matchTime(m)<now).sort((a,b)=>matchTime(b)-matchTime(a));
+  const next=[...future,...past].slice(0,6);
+  $("nextMatches").innerHTML=next.length?next.map(m=>
+    matchCard(m)+(matchTime(m)<now?'<div class="match-schedule-note">Scheduled time passed · result pending or match rescheduled</div>':"")
+  ).join(""):"All group-stage matches completed.";
   const latest=[...state.results].slice(-6).reverse();
-  $("latestResults").innerHTML=latest.length?latest.map(r=>`<div class="result-card"><div class="match-meta">${esc(r.date)} • Group ${r.group}</div><div><strong>${esc(r.winner)}</strong> won ${esc(r.setScore)} ${r.forfeit==="Y"?"(W/O)":""}</div><div class="small-note">${esc(r.p1)} vs ${esc(r.p2)}</div></div>`).join(""):"No results recorded yet.";
+  $("latestResults").innerHTML=latest.length?latest.map(r=>'<div class="result-card"><div class="match-meta">'+esc(r.date)+' • Group '+r.group+'</div><div><strong>'+esc(r.winner)+'</strong> won '+(r.forfeit==="Y"?"by forfeit":esc(r.setScore))+'</div><div class="small-note">'+esc(r.p1)+' vs '+esc(r.p2)+'</div></div>').join(""):"No results recorded yet.";
+  renderProgress();
   renderMyMatches();
 }
 function renderMyMatches(){
-  const q=norm($("homePlayerSearch").value).toLowerCase(),el=$("myMatches");
-  if(q.length<2){el.innerHTML="";return}
-  const a=state.schedule.filter(m=>m.p1.toLowerCase().includes(q)||m.p2.toLowerCase().includes(q));
-  el.innerHTML=a.length?a.map(matchCard).join(""):'<p class="muted-empty">No matching player found.</p>';
+  const q=sheetKey($("homePlayerSearch").value),el=$("myMatches");
+  if(q.length<2){el.innerHTML="";$("playerDashboard").innerHTML="";return}
+  const players=[...new Set(state.groups.map(p=>p.player))].filter(p=>sheetKey(p).includes(q));
+  const a=state.schedule.filter(m=>sheetKey(m.p1).includes(q)||sheetKey(m.p2).includes(q))
+    .sort((x,y)=>matchTime(x)-matchTime(y));
+  renderPlayerDashboard(players);
+  el.innerHTML=a.length?a.map(matchCardWithStatus).join(""):'<p class="muted-empty">No matching player found.</p>';
 }
 function renderSchedule(){
   const q=norm($("scheduleSearch").value).toLowerCase(),g=$("groupFilter").value,w=$("weekFilter").value;
@@ -773,6 +827,16 @@ document.addEventListener("click",e=>{
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeNotifications()});
 $("homePlayerSearch").addEventListener("input",renderMyMatches);
+$("myMatches").addEventListener("click",e=>{
+  const btn=e.target.closest("[data-record-match]");
+  if(!btn)return;
+  renderScoreForm();
+  const index=scoreFormMatches.findIndex(m=>scoreMatchKey(m)===btn.dataset.recordMatch);
+  if(index<0)return;
+  $("scoreMatchSelect").value=String(index);
+  showScoreMatch();
+  openView("record-score");
+});
 $("scheduleSearch").addEventListener("input",renderSchedule);
 $("groupFilter").addEventListener("change",renderSchedule);
 $("weekFilter").addEventListener("change",renderSchedule);
