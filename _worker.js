@@ -29,6 +29,7 @@ export default {
             typeof input.p2 !== "string" || input.p1.length > 100 || input.p2.length > 100) {
           return Response.json({ ok: false, error: "Invalid match." }, { status: 400 });
         }
+        if (input.forfeit !== true && input.forfeit !== false) return Response.json({ok:false,error:"Invalid result type."},{status:400});
         const forfeit = input.forfeit === true;
         if (forfeit) {
           if (typeof input.winner !== "string" ||
@@ -40,6 +41,18 @@ export default {
             input.scores.some(s => !Array.isArray(s) || s.length !== 2 ||
               s.some(n => !Number.isInteger(n) || n < 0 || n > 99))) {
           return Response.json({ ok: false, error: "Invalid game scores." }, { status: 400 });
+        }
+        if (!forfeit) {
+          let a=0,b=0;
+          for (const pair of input.scores) {
+            if (a===3 || b===3) return Response.json({ok:false,error:"Do not enter games after the match is won."},{status:400});
+            const [x,y]=pair;
+            if (Math.max(x,y)<11 || Math.abs(x-y)<2 ||
+                (Math.max(x,y)>11 && Math.abs(x-y)!==2))
+              return Response.json({ok:false,error:"Each game must be won by two points, starting at 11."},{status:400});
+            if(x>y)a++;else b++;
+          }
+          if(Math.max(a,b)!==3) return Response.json({ok:false,error:"The winner must win three games."},{status:400});
         }
         const target = String(env.SCORE_WRITE_URL);
         if (!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(target)) throw Error("Invalid write endpoint");
