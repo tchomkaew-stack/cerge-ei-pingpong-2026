@@ -769,7 +769,7 @@ function renderHome(){
   const latest=[...state.results].slice(-6).reverse();
   $("latestResults").innerHTML=latest.length?latest.map(r=>
     '<div class="result-card"><div class="match-meta">'+(r.date?esc(fmtDate(r.date))+' · ':'')+'Group '+esc(r.group)+'</div>'+
-    '<div><strong>'+esc(r.winner)+'</strong> won '+esc(resultScoreSummary(r))+
+    '<div><strong>'+esc(r.winner)+'</strong> won '+(r.forfeit==="Y"?"by forfeit":esc(resultScoreSummary(r)))+
     (isFiveGameMatch(r)?' <span class="close-match-tag">Five-game thriller</span>':"")+'</div>'+
     '<div class="small-note">'+esc(r.p1)+' vs '+esc(r.p2)+'</div></div>').join(""):"No results recorded yet.";
   renderProgress();
@@ -779,7 +779,9 @@ function renderHome(){
 function renderMyMatches(){
   const q=sheetKey($("homePlayerSearch").value),el=$("myMatches");
   if(q.length<2){el.innerHTML="";$("playerDashboard").innerHTML="";return}
-  const players=[...new Set(state.groups.map(p=>p.player))].filter(p=>sheetKey(p).includes(q));
+  const found=[...new Set(state.groups.map(p=>p.player))].filter(p=>sheetKey(p).includes(q));
+  const exact=found.find(p=>sheetKey(p)===q);
+  const players=exact?[exact]:found;
   if(players.length>1){
     $("playerDashboard").innerHTML='<p class="small-note">Select your name to see only your fixtures.</p>';
     el.innerHTML='<div class="player-choice-list">'+players.map(p=>
@@ -886,10 +888,7 @@ function renderStandings(){
 
 let scoreWriteEnabled=false, scoreSubmitting=false;
 function scoreMatchKey(m){return [m.group,m.p1,m.p2].join("|")}
-function matchHasResult(m){
-  return state.results.some(r=>sheetKey(r.group)===sheetKey(m.group)
-    && sheetKey(r.p1)===sheetKey(m.p1)&&sheetKey(r.p2)===sheetKey(m.p2));
-}
+function matchHasResult(m){return Boolean(resultForMatch(m))}
 function renderScoreForm(){
   const selector=$("scoreMatchSelect");
   if(!selector)return;
@@ -931,8 +930,7 @@ function showScoreMatch(preserveFields=false){
   const names=$("scoreSelectedMatch"),games=$("scoreGames");
   if(!names||!games)return;
   names.textContent=m?m.p1+" (Player 1) vs "+m.p2+" (Player 2)":"Choose a match to see the players' names.";
-  const recorded=m&&state.results.find(r=>sheetKey(r.group)===sheetKey(m.group)
-    && sheetKey(r.p1)===sheetKey(m.p1)&&sheetKey(r.p2)===sheetKey(m.p2));
+  const recorded=m&&resultForMatch(m);
   const existing=$("scoreExistingResult");
   if(existing){
     existing.hidden=!recorded;
@@ -1111,7 +1109,9 @@ $("myMatches").addEventListener("click",e=>{
   const index=scoreFormMatches.findIndex(m=>scoreMatchKey(m)===btn.dataset.recordMatch);
   if(index<0)return;
   $("scoreMatchSelect").value=String(index);
-  showScoreMatch();
+  document.querySelectorAll("#scoreGames input").forEach(x=>x.value="");
+  if($("scoreEntryFeedback"))$("scoreEntryFeedback").textContent="";
+  showScoreMatch(false);
   openView("record-score");
 });
 $("scheduleSearch").addEventListener("input",renderSchedule);
