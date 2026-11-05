@@ -278,9 +278,10 @@ function parseResults(rows){
   const p1=index("player 1","player1"),p2=index("player 2","player2"),
     winner=index("winner"),group=index("group"),date=index("date"),
     forfeit=index("forfeit (y/n)","forfeit","forfeit y/n"),
-    setScore=index("set score (e.g. 3-1)","set score (e.g. 2-1)","set score","set score (e.g. 3–1)");
+    setScore=index("set score (e.g. 3-1)","set score (e.g. 2-1)","set score","set score (e.g. 3–1)"),
+    updated=index("last updated","updated at","recorded at");
   const scoreCols=[1,2,3,4,5].map(n=>headers.findIndex(x=>x==="score set "+n||x==="set "+n));
-  return rows.slice(h+1).filter(r=>norm(r[p1])&&norm(r[p2])).map(r=>{
+  return rows.slice(h+1).filter(r=>norm(r[p1])&&norm(r[p2])).map((r,rowIndex)=>{
     const scores=scoreCols.map(i=>i>=0?norm(r[i]):"").filter(Boolean);
     let w=norm(r[winner]);
     // Sheets may contain scores before the winner formula has recalculated.
@@ -291,7 +292,7 @@ function parseResults(rows){
       else if(bw>=3)w=norm(r[p2]);
     }
     return {
-      date:date>=0?norm(r[date]):"",group:group>=0?norm(r[group]):"",
+      date:date>=0?norm(r[date]):"",updatedAt:updated>=0?norm(r[updated]):"",rowIndex,group:group>=0?norm(r[group]):"",
       p1:norm(r[p1]),p2:norm(r[p2]),scores,
       winner:w,setScore:setScore>=0?norm(r[setScore]):"",
       forfeit:forfeit>=0?norm(r[forfeit]).toUpperCase():""
@@ -827,16 +828,22 @@ function renderHome(){
   const future=remaining.filter(m=>matchTime(m)>=now).sort((a,b)=>matchTime(a)-matchTime(b));
   const past=remaining.filter(m=>matchTime(m)<now).sort((a,b)=>matchTime(b)-matchTime(a));
   const next=[...future,...past].slice(0,6);
-  $("nextMatches").innerHTML=next.length?next.map(m=>
-    matchCard(m)+(matchTime(m)<now?'<div class="match-schedule-note">Scheduled time passed · result pending or match rescheduled</div>':"")
-  ).join(""):"All group-stage matches completed.";
-  const latest=[...state.results].slice(-6).reverse();
+  const pragueDay=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+  const upcomingToday=next.filter(m=>m.date===pragueDay&&matchTime(m)>=now);
+  const other=next.filter(m=>!upcomingToday.includes(m));
+  const cards=items=>items.map(m=>matchCard(m)+(matchTime(m)<now?'<div class="match-schedule-note">Scheduled time passed · result pending or match rescheduled</div>':"")).join("");
+  $("nextMatches").innerHTML=next.length?
+    (upcomingToday.length?'<div class="match-period-label">Today · Prague time</div>'+cards(upcomingToday):"")+
+    (other.length?'<div class="match-period-label">'+(upcomingToday.length?"Coming up / awaiting updates":"Next fixtures · Prague time")+'</div>'+cards(other):"")
+    :"All group-stage matches completed.";
+  const latest=sortedResults(state.results).slice(0,6);
   $("latestResults").innerHTML=latest.length?latest.map(r=>
     '<div class="result-card"><div class="match-meta">'+(r.date?esc(fmtDate(r.date))+' · ':'')+'Group '+esc(r.group)+'</div>'+
     '<div><strong>'+esc(r.winner)+'</strong> won'+(r.forfeit==="Y"?" by forfeit":resultScoreSummary(r)==="Result recorded"?"":" "+esc(resultScoreSummary(r)))+
     (isFiveGameMatch(r)?' <span class="close-match-tag">Five-game thriller</span>':"")+'</div>'+
     '<div class="small-note">'+esc(r.p1)+' vs '+esc(r.p2)+'</div></div>').join(""):"No results recorded yet.";
   renderProgress();
+  renderLeagueStories();
   renderFeaturedRematches();
   renderMyMatches();
 }
@@ -889,6 +896,50 @@ function isFiveGameMatch(r){
   const pair=scorePair(r.setScore);
   return pair?Math.min(...pair)===2&&Math.max(...pair)===3:(r.scores||[]).length===5;
 }
+function resultTimestamp(r){
+  const stamp=norm(r.updatedAt);
+  if(stamp){
+    const normalized=stamp.replace(" ","T");
+    const parsed=Date.parse(normalized);
+    if(Number.isFinite(parsed))return parsed;
+  }
+  const date=norm(r.date);
+  if(date){
+    const parsed=Date.parse(date);
+    if(Number.isFinite(parsed))return parsed;
+  }
+  return 0;
+}
+function sortedResults(results){
+  return [...results].sort((a,b)=>resultTimestamp(b)-resultTimestamp(a)||(b.rowIndex??0)-(a.rowIndex??0));
+}
+function isComeback(r){
+  if(r.forfeit==="Y"||!Array.isArray(r.scores)||r.scores.length!==5)return false;
+  const first=r.scores.slice(0,2).map(scorePair),last=r.scores.slice(2).map(scorePair);
+  if(first.some(x=>!x)||last.some(x=>!x))return false;
+  const downFirst=first.every(x=>x[0]<x[1]);
+  const downSecond=first.every(x=>x[1]<x[0]);
+  return (downFirst&&last.every(x=>x[0]>x[1]))||(downSecond&&last.every(x=>x[1]>x[0]));
+}
+function renderLeagueStories(){
+  const panel=$("aroundLeaguePanel"),list=$("aroundLeague");
+  if(!panel||!list)return;
+  const completed=new Set(state.results.map(r=>pairKey(r.group,r.p1,r.p2))).size;
+  const milestones=[25,50,75,100].filter(n=>completed>=n);
+  const completedGroups="ABCDEFG".split("").filter(g=>{
+    const matches=state.schedule.filter(m=>m.group===g);
+    return matches.length===15&&matches.every(m=>state.results.some(r=>pairKey(r.group,r.p1,r.p2)===pairKey(m.group,m.p1,m.p2)));
+  });
+  const highlights=sortedResults(state.results).filter(r=>isFiveGameMatch(r)).slice(0,2);
+  const stories=[];
+  if(milestones.length)stories.push({title:milestones.at(-1)+" matches completed",body:"A group-stage milestone for the whole league."});
+  if(completedGroups.length)stories.push({title:"Group "+completedGroups.join(", ")+" complete",body:"All 15 fixtures have recorded results."});
+  for(const r of highlights)stories.push({title:isComeback(r)?"A comeback from two games down":"Five-game thriller",
+    body:r.p1+" vs "+r.p2+" · Group "+r.group+" · "+r.winner+" won "+resultScoreSummary(r)});
+  panel.hidden=!stories.length;
+  list.innerHTML=stories.slice(0,3).map(x=>'<article class="league-story"><strong>'+esc(x.title)+'</strong><p>'+esc(x.body)+'</p></article>').join("");
+}
+
 function renderResults(){
   const list=$("resultsList"),count=$("resultsCount");
   const notice=$("resultsSourceNotice");
@@ -899,8 +950,8 @@ function renderResults(){
   if(!list)return;
   const q=sheetKey($("resultsSearch")?.value||"");
   const group=$("resultsGroupFilter")?.value||"";
-  const results=state.results.filter(r=>(!group||r.group===group)&&
-    (!q||sheetKey(r.p1).includes(q)||sheetKey(r.p2).includes(q)||sheetKey(r.winner).includes(q))).slice().reverse();
+  const results=sortedResults(state.results.filter(r=>(!group||r.group===group)&&
+    (!q||sheetKey(r.p1).includes(q)||sheetKey(r.p2).includes(q)||sheetKey(r.winner).includes(q))));
   if(count)count.textContent=results.length+" of "+state.results.length+" recorded results";
   list.innerHTML=results.length?results.map(r=>{
     const score=resultScoreSummary(r);
