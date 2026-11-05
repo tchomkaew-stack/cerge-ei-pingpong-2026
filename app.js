@@ -484,7 +484,18 @@ function deriveStandings(){
   return [...byPlayer.values()];
 }
 function compareRank(a,b){
-  return b.wins-a.wins||b.winRate-a.winRate||b.setRatio-a.setRatio||b.pointDiff-a.pointDiff||a.player.localeCompare(b.player);
+  return b.wins-a.wins||b.winRate-a.winRate||b.setRatio-a.setRatio||b.pointDiff-a.pointDiff;
+}
+function unresolvedTie(a,b){return Boolean(a&&b&&compareRank(a,b)===0)}
+function qualificationStatus(player,eligible,wc){
+  const rank=eligible.findIndex(x=>sheetKey(x.player)===sheetKey(player.player));
+  if(rank<0)return "";
+  if(rank<2)return unresolvedTie(eligible[1],eligible[2])?"Tie — decision pending":"Automatic position";
+  if(rank===2&&unresolvedTie(eligible[1],eligible[2]))return "Tie — decision pending";
+  const wi=wc.findIndex(x=>sheetKey(x.player)===sheetKey(player.player));
+  if(wi>=0&&wi<2)return unresolvedTie(wc[1],wc[2])?"Tie — decision pending":"Wildcard position";
+  if(wi===2&&unresolvedTie(wc[1],wc[2]))return "Tie — decision pending";
+  return "";
 }
 function eligibleByGroup(){
   const out={};for(const g of "ABCDEFG")out[g]=state.standings.filter(x=>x.group===g&&x.matches>=3).sort(compareRank);
@@ -533,8 +544,15 @@ function matchCard(m){
 
 function resultForMatch(m){return state.results.find(r=>pairKey(r.group,r.p1,r.p2)===pairKey(m.group,m.p1,m.p2))}
 function matchTime(m){
-  const d=new Date((m.date||"")+"T"+(m.time||"00:00")+":00");
-  return Number.isNaN(d.getTime())?Infinity:d.getTime();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(m.date||"")||!/^\d{2}:\d{2}$/.test(m.time||""))return Infinity;
+  const [year,month,day]=m.date.split("-").map(Number);
+  const [hour,minute]=m.time.split(":").map(Number);
+  const utc=Date.UTC(year,month-1,day,hour,minute);
+  const zone=new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/Prague",timeZoneName:"shortOffset"})
+    .formatToParts(new Date(utc)).find(x=>x.type==="timeZoneName")?.value||"GMT+1";
+  const match=zone.match(/GMT([+-])(\d{1,2})(?::(\d{2}))?/);
+  const offset=match?(match[1]==="+"?1:-1)*(Number(match[2])*60+Number(match[3]||0)):60;
+  return utc-offset*60000;
 }
 function playerMatchCard(m,player){
   const result=resultForMatch(m);
@@ -602,6 +620,45 @@ function renderPlayerDashboard(players){
 }
 
 
+function validateScheduleData(schedule,groups){
+  const errors=[],players=new Map(groups.map(x=>[sheetKey(x.player),x.group])),unique=new Set();
+  if(groups.length!==42||new Set(groups.map(x=>sheetKey(x.player))).size!==42)errors.push("Expected 42 unique players.");
+  for(const g of "ABCDEFG")if(groups.filter(x=>x.group===g).length!==6)errors.push("Group "+g+" should contain 6 players.");
+  if(schedule.length!==105)errors.push("Expected 105 fixtures, found "+schedule.length+".");
+  for(const m of schedule){
+    const key=pairKey(m.group,m.p1,m.p2);
+    if(unique.has(key))errors.push("Duplicate fixture: "+m.p1+" / "+m.p2);
+    unique.add(key);
+    if(sheetKey(m.p1)===sheetKey(m.p2)||players.get(sheetKey(m.p1))!==m.group||players.get(sheetKey(m.p2))!==m.group)
+      errors.push("Invalid group pairing: "+m.p1+" / "+m.p2);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(m.date||"")||!/^\d{2}:\d{2}$/.test(m.time||""))
+      errors.push("Invalid fixture date/time: "+m.p1+" / "+m.p2);
+  }
+  return errors;
+}
+function validateResultData(results,schedule){
+  const keys=new Set(schedule.map(m=>pairKey(m.group,m.p1,m.p2))),seen=new Set(),errors=[];
+  for(const r of results){
+    const key=pairKey(r.group,r.p1,r.p2);
+    if(!keys.has(key))errors.push("Result has no fixture: "+r.p1+" / "+r.p2);
+    if(seen.has(key))errors.push("Duplicate result: "+r.p1+" / "+r.p2);
+    seen.add(key);
+    if(![sheetKey(r.p1),sheetKey(r.p2)].includes(sheetKey(r.winner)))errors.push("Invalid winner: "+r.p1+" / "+r.p2);
+    if(r.forfeit!=="Y"&&r.scores.length){
+      let p1=0,p2=0;
+      for(const score of r.scores){
+        const pair=scorePair(score);
+        if(!pair||Math.max(...pair)<11||Math.abs(pair[0]-pair[1])<2||(Math.max(...pair)>11&&Math.abs(pair[0]-pair[1])!==2))
+          errors.push("Invalid game score: "+r.p1+" / "+r.p2);
+        if(pair){if(pair[0]>pair[1])p1++;else p2++;}
+      }
+      if(Math.max(p1,p2)!==3||sheetKey(p1===3?r.p1:r.p2)!==sheetKey(r.winner))
+        errors.push("Game wins mismatch: "+r.p1+" / "+r.p2);
+    }
+  }
+  return errors;
+}
+
 function parseKnockout(rows){
   const h=rows.findIndex(r=>r.map(sheetKey).includes("round")&&r.map(sheetKey).includes("player 1")&&r.map(sheetKey).includes("player 2"));
   if(h<0)return[];
@@ -659,15 +716,16 @@ async function refreshData(){
 
     if(loaded.Groups){
       const parsed=parseGroups(loaded.Groups);
-      if(parsed.length)state.groups=parsed;
-      else errors.push("Groups: no players found in live data");
+      if(parsed.length===42&&new Set(parsed.map(x=>sheetKey(x.player))).size===42)state.groups=parsed;
+      else errors.push("Groups: expected 42 unique players; keeping previous data.");
     }
 
     let scheduleFresh=false;
     if(loaded.Schedule){
       const parsed=parseSchedule(loaded.Schedule);
-      if(parsed.length){state.schedule=parsed;scheduleFresh=true}
-      else errors.push("Schedule: no valid fixtures found in live data");
+      const issues=validateScheduleData(parsed,state.groups);
+      if(!issues.length){state.schedule=parsed;scheduleFresh=true}
+      else errors.push("Schedule: "+issues.slice(0,3).join(" ")+" Keeping previous data.");
     }
     // Do not replace an already loaded live schedule with old defaults on a network error.
     let scheduleCached=false;
@@ -675,21 +733,21 @@ async function refreshData(){
       scheduleCached=true;
       if(!state.schedule.length)state.schedule=FALLBACK_SCHEDULE;
     }
-    if(loaded["Results recording"])state.results=parseResults(loaded["Results recording"]);
+    let resultsFresh=false;
+    if(loaded["Results recording"]){
+      const parsed=parseResults(loaded["Results recording"]);
+      const issues=validateResultData(parsed,state.schedule);
+      if(!issues.length){state.results=parsed;resultsFresh=true}
+      else errors.push("Results: "+issues.slice(0,3).join(" ")+" Keeping previous data.");
+    }
     if(loaded.Knockout)state.knockout=parseKnockout(loaded.Knockout);
     const sheetStandings=loaded.Standing?parseStandings(loaded.Standing):[];
-    const calculated=state.groups.length?deriveStandings():[];
-    const sheetHasMatches=sheetStandings.some(x=>x.matches>0||x.wins>0);
-    const calculatedHasMatches=calculated.some(x=>x.matches>0);
-    if(loaded.Standing||loaded["Results recording"]){
-      state.standings=sheetHasMatches && (!calculatedHasMatches ||
-        sheetStandings.reduce((n,x)=>n+x.matches,0)>=calculated.reduce((n,x)=>n+x.matches,0))
-        ?sheetStandings:calculated.length?calculated:sheetStandings;
-    }
+    // One canonical calculation from recorded games, avoiding conflicting sheet ratios.
+    if(resultsFresh&&state.groups.length)state.standings=deriveStandings();
+    else if(sheetStandings.length===42&&!state.standings.length)state.standings=sheetStandings;
     dataFreshness.schedule=scheduleFresh;
-    dataFreshness.results=Boolean(loaded["Results recording"]);
-    dataFreshness.standings=Boolean(loaded.Standing)||
-      Boolean(loaded["Results recording"]&&state.groups.length);
+    dataFreshness.results=resultsFresh;
+    dataFreshness.standings=resultsFresh&&state.groups.length===42;
     if(loaded.Announcements){
       const merged=[...FALLBACK_ANNOUNCEMENTS];
       for(const notice of parseAnnouncements(loaded.Announcements)){
@@ -702,7 +760,7 @@ async function refreshData(){
     }
 
     const coreOk=state.groups.length>0&&state.schedule.length>0;
-    const liveCore=core.every(name=>Boolean(loaded[name]))&&scheduleFresh;
+    const liveCore=core.every(name=>Boolean(loaded[name]))&&scheduleFresh&&resultsFresh;
     status.dataset.results=String(state.results.length);
     status.dataset.standings=String(state.standings.length);
     if(coreOk&&liveCore&&errors.length===0){
