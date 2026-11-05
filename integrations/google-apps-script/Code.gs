@@ -91,7 +91,7 @@ function doPost(e) {
       ? (normalized_(body.winner)===normalized_(p1)?String(row[4]).trim():String(row[5]).trim())
       : (data.wins[0]===3?String(row[4]).trim():String(row[5]).trim());
     const scores=isForfeit?Array(5).fill(''):Array.from({length:5},(_,i)=>data.strings[i]||'');
-    const setScore=isForfeit?'':data.wins.join('-');
+    const setScore=isForfeit?'':Math.max(...data.wins)+'-'+Math.min(...data.wins);
     sheet.getRange(found+1,7,1,5).setValues([scores]);
     sheet.getRange(found+1,12).setValue(winner);
     sheet.getRange(found+1,forfeitCol).setValue(isForfeit?'Y':'N');
