@@ -726,19 +726,21 @@ async function refreshData(){
       else errors.push("Groups: expected 42 unique players; keeping previous data.");
     }
 
-    let scheduleFresh=false;
+    let scheduleFresh=false,scheduleLoaded=false;
     if(loaded.Schedule){
       const parsed=parseSchedule(loaded.Schedule);
       const issues=validateScheduleData(parsed,state.groups);
-      if(!issues.length){state.schedule=parsed;scheduleFresh=true}
-      else errors.push("Schedule: "+issues.slice(0,3).join(" ")+" Keeping previous data.");
+      // Show the latest sheet even if a fixture needs correction; never hide a
+      // legitimate reschedule behind an old built-in schedule.
+      if(parsed.length>=80&&state.groups.length===42){
+        state.schedule=parsed;
+        scheduleLoaded=true;
+        scheduleFresh=issues.length===0;
+        if(issues.length)errors.push("Schedule needs review: "+issues.slice(0,3).join(" ")+" Displaying the latest sheet.");
+      }else errors.push("Schedule could not be parsed reliably; keeping previous data.");
     }
-    // Do not replace an already loaded live schedule with old defaults on a network error.
-    let scheduleCached=false;
-    if(!scheduleFresh){
-      scheduleCached=true;
-      if(!state.schedule.length)state.schedule=FALLBACK_SCHEDULE;
-    }
+    let scheduleCached=!scheduleLoaded;
+    if(scheduleCached&&!state.schedule.length)state.schedule=FALLBACK_SCHEDULE;
     let resultsFresh=false;
     if(loaded["Results recording"]){
       const parsed=parseResults(loaded["Results recording"]);
@@ -977,7 +979,7 @@ function renderSchedule(){
   const notice=$("scheduleSourceNotice");
   if(notice){
     notice.hidden=dataFreshness.schedule;
-    notice.textContent=dataFreshness.schedule?"":"The current schedule could not be confirmed from Google Sheets. Check the sheet or refresh before relying on these times.";
+    notice.textContent=dataFreshness.schedule?"":"The schedule has not passed every integrity check or could not be confirmed. Please verify questionable fixtures in Google Sheets.";
   }
   const q=sheetKey($("scheduleSearch").value),g=$("groupFilter").value,w=$("weekFilter").value;
   const matches=state.schedule.filter(m=>(!g||m.group===g)&&(!w||String(m.week)===w)&&
