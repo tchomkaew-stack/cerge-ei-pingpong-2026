@@ -651,6 +651,29 @@ async function refreshData(){
   }
   renderAll();
 }
+
+function renderFeaturedRematches(){
+  const panel=$("featuredRematchesPanel");
+  const list=$("featuredRematchesList");
+  if(!panel||!list)return;
+  const fixtures=FEATURED_2025_REMATCHES.map(feature=>{
+    const pair=feature.players.map(sheetKey).sort().join("|");
+    const match=state.schedule.find(m=>sheetKey(m.group)===sheetKey(feature.group)
+      && [sheetKey(m.p1),sheetKey(m.p2)].sort().join("|")===pair);
+    return match&&rematch2025(match)?{match,feature}:null;
+  }).filter(Boolean).sort((a,b)=>matchTime(a.match)-matchTime(b.match));
+  panel.hidden=fixtures.length===0;
+  if(!fixtures.length){list.innerHTML="";return}
+  $("featuredRematchesSubtitle").textContent=fixtures.length+" historical "+(fixtures.length===1?"rematch":"rematches")+" still ahead — highlights disappear once results are recorded.";
+  list.innerHTML=fixtures.map(({match:m,feature:f})=>
+    '<article class="rematch-feature-card">'+
+      '<div class="rematch-feature-top"><span class="rematch-tag">2025 rematch</span><span class="rematch-feature-date">'+esc(fmtDate(m.date))+' · Group '+esc(m.group)+'</span></div>'+
+      '<div class="rematch-feature-players"><strong>'+esc(m.p1)+'</strong><span>vs</span><strong>'+esc(m.p2)+'</strong></div>'+
+      '<p class="rematch-feature-story">'+esc(f.story)+'</p>'+
+      (f.note?'<p class="rematch-feature-note">'+esc(f.note)+'</p>':'<p class="rematch-feature-time">Scheduled '+esc(m.time||"time TBC")+' · subject to rearrangement</p>')+
+    '</article>').join("");
+}
+
 function renderHome(){
   const done=new Set(state.results.map(r=>pairKey(r.group,r.p1,r.p2)));
   const remaining=state.schedule.filter(m=>!done.has(pairKey(m.group,m.p1,m.p2)));
@@ -664,6 +687,7 @@ function renderHome(){
   const latest=[...state.results].slice(-6).reverse();
   $("latestResults").innerHTML=latest.length?latest.map(r=>'<div class="result-card"><div class="match-meta">'+esc(r.date)+' • Group '+r.group+'</div><div><strong>'+esc(r.winner)+'</strong> won '+(r.forfeit==="Y"?"by forfeit":esc(r.setScore))+'</div><div class="small-note">'+esc(r.p1)+' vs '+esc(r.p2)+'</div></div>').join(""):"No results recorded yet.";
   renderProgress();
+  renderFeaturedRematches();
   renderMyMatches();
 }
 function renderMyMatches(){
