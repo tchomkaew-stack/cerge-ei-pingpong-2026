@@ -781,10 +781,10 @@ function validateScoreForm(){
     }
     winner.textContent=summary;
     btn.disabled=!scoreWriteEnabled||scoreSubmitting;
-    if(feedback&&!scoreSubmitting)feedback.textContent="";
+
   }catch(e){
     winner.textContent=e.message;
-    if(feedback&&!scoreSubmitting)feedback.textContent="";
+
   }
 }
 async function checkScoreWriteAvailability(){
@@ -837,7 +837,7 @@ async function submitScoreForm(e){
     openView("record-score");
     $("scoreEntryFeedback").textContent="Saved! "+data.winner+
       (data.forfeit?" won by forfeit.":" won "+data.setScore+".")+
-      " The result and standings have been refreshed from Google Sheets.";
+      " The result and standings have been refreshed from Google Sheets."+(data.auditLogged===false?" WARNING: "+(data.auditWarning||"Change history could not be recorded."):"");
   }catch(err){$("scoreEntryFeedback").textContent=err.message+" If you're unsure whether it saved, check the Google Sheet before trying again."}
   finally{scoreSubmitting=false;validateScoreForm()}
 }
@@ -890,9 +890,9 @@ $("groupFilter").addEventListener("change",renderSchedule);
 $("weekFilter").addEventListener("change",renderSchedule);
 $("refreshBtn").addEventListener("click",refreshData);
 $("scoreMatchSelect")?.addEventListener("change",()=>{document.querySelectorAll("#scoreGames input").forEach(x=>x.value="");showScoreMatch()});
-$("scoreGames")?.addEventListener("input",validateScoreForm);
-$("scoreResultType")?.addEventListener("change",updateScoreEntryType);
-$("scoreForfeitWinner")?.addEventListener("change",validateScoreForm);
+$("scoreGames")?.addEventListener("input",()=>{$("scoreEntryFeedback").textContent="";validateScoreForm()});
+$("scoreResultType")?.addEventListener("change",()=>{$("scoreEntryFeedback").textContent="";updateScoreEntryType()});
+$("scoreForfeitWinner")?.addEventListener("change",()=>{$("scoreEntryFeedback").textContent="";validateScoreForm()});
 $("scoreEntryForm")?.addEventListener("submit",submitScoreForm);
 checkScoreWriteAvailability();
 refreshData();
