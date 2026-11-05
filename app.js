@@ -425,6 +425,10 @@ function openView(view){
     document.querySelectorAll('[data-view="'+view+'"]').forEach(x=>x.classList.add("active"));
   }
   target.classList.add("active");
+  document.querySelectorAll(".tab").forEach(button=>{
+    if(button.dataset.view===view)button.setAttribute("aria-current","page");
+    else button.removeAttribute("aria-current");
+  });
   closeNotifications();
   window.scrollTo({top:document.querySelector(".tabs")?.offsetTop||0,behavior:"smooth"});
 }
@@ -828,7 +832,9 @@ function renderHome(){
   const future=remaining.filter(m=>matchTime(m)>=now).sort((a,b)=>matchTime(a)-matchTime(b));
   const past=remaining.filter(m=>matchTime(m)<now).sort((a,b)=>matchTime(b)-matchTime(a));
   const next=[...future,...past].slice(0,6);
-  const pragueDay=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+  const parts=new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+  const part=t=>parts.find(x=>x.type===t)?.value||"";
+  const pragueDay=part("year")+"-"+part("month")+"-"+part("day");
   const upcomingToday=next.filter(m=>m.date===pragueDay&&matchTime(m)>=now);
   const other=next.filter(m=>!upcomingToday.includes(m));
   const cards=items=>items.map(m=>matchCard(m)+(matchTime(m)<now?'<div class="match-schedule-note">Scheduled time passed · result pending or match rescheduled</div>':"")).join("");
@@ -976,7 +982,17 @@ function renderSchedule(){
   const q=sheetKey($("scheduleSearch").value),g=$("groupFilter").value,w=$("weekFilter").value;
   const matches=state.schedule.filter(m=>(!g||m.group===g)&&(!w||String(m.week)===w)&&
     (!q||sheetKey(m.p1).includes(q)||sheetKey(m.p2).includes(q)));
-  $("scheduleTableWrap").innerHTML='<div class="table-wrap"><table><thead><tr>'+
+  const cards=matches.map(m=>{
+    const r=resultForMatch(m),past=matchTime(m)<Date.now();
+    const status=r?(r.forfeit==="Y"?"Completed · forfeit":"Completed · "+resultScoreSummary(r)):
+      past?"Time passed · awaiting update":"Scheduled";
+    return '<article class="mobile-schedule-card">'+
+      '<div class="mobile-schedule-top"><strong>Group '+esc(m.group)+'</strong><span>Week '+esc(m.week)+'</span></div>'+
+      '<div class="mobile-schedule-players">'+esc(m.p1)+' <span>vs</span> '+esc(m.p2)+'</div>'+
+      '<div class="mobile-schedule-bottom"><span>'+esc(fmtDate(m.date))+' · '+esc(m.time)+' Prague</span>'+
+      '<span class="schedule-table-status '+(r?"completed":past?"pending":"scheduled")+'">'+esc(status)+'</span></div></article>';
+  }).join("");
+  $("scheduleTableWrap").innerHTML='<div class="mobile-schedule-list">'+cards+'</div><div class="table-wrap desktop-schedule-table"><table><thead><tr>'+
     '<th>Week</th><th>Date</th><th>Time</th><th>Group</th><th>Player 1</th><th>Player 2</th><th>Status</th>'+
     '</tr></thead><tbody>'+matches.map(m=>{
       const r=resultForMatch(m);
