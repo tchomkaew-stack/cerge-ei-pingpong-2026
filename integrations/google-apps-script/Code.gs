@@ -33,6 +33,9 @@ function validateScores_(scores) {
   if (Math.max(a,b)!==3) throw Error('A completed match must have three game wins.');
   return {strings,wins:[a,b]};
 }
+function ensureColumn_(sheet,col) {
+  if(col>sheet.getMaxColumns())sheet.insertColumnsAfter(sheet.getMaxColumns(),col-sheet.getMaxColumns());
+}
 function doPost(e) {
   const lock=LockService.getScriptLock();
   try {
@@ -80,6 +83,7 @@ function doPost(e) {
     let forfeitCol=headers.findIndex(x=>x==='forfeit (y/n)'||x==='forfeit'||x==='forfeit y/n')+1;
     if(!forfeitCol){
       forfeitCol=Math.max(sheet.getLastColumn()+1,14);
+      ensureColumn_(sheet,forfeitCol);
       sheet.getRange(headings+1,forfeitCol).setValue('Forfeit (Y/N)');
     }
     before.forfeit=String(sheet.getRange(found+1,forfeitCol).getDisplayValue()||'');
@@ -94,6 +98,7 @@ function doPost(e) {
     let updatedCol=headers.findIndex(x=>x==='last updated'||x==='updated at'||x==='recorded at')+1;
     if(!updatedCol){
       updatedCol=Math.max(sheet.getLastColumn()+1,forfeitCol+1);
+      ensureColumn_(sheet,updatedCol);
       sheet.getRange(headings+1,updatedCol).setValue('Last updated');
     }
     sheet.getRange(found+1,updatedCol).setValue(new Date()).setNumberFormat('yyyy-mm-dd hh:mm:ss');
