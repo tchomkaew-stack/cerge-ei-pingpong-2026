@@ -956,3 +956,35 @@ footer::before{
 
 /* Keep expired pre-season promotion hidden in cached homepage HTML. */
 .history-panel{display:none!important}
+
+/* Active tournament: progress and personal dashboard */
+.tournament-progress{padding:20px 22px}
+.tournament-progress .section-heading{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.progress-percent{font-size:1.55rem;color:var(--navy)}
+.progress-track,.group-progress-track{background:#e8edf4;border-radius:999px;overflow:hidden}
+.progress-track{height:12px;margin:12px 0 18px}
+.progress-fill,.group-progress-track>div{height:100%;background:linear-gradient(90deg,var(--crimson),var(--gold-bright));border-radius:999px;transition:width .35s ease}
+.group-progress{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px}
+.group-progress-item>div:first-child{display:flex;justify-content:space-between;gap:5px;font-size:.75rem;margin-bottom:7px}
+.group-progress-item span{color:var(--muted)}
+.group-progress-track{height:6px}
+.player-dashboard:empty{display:none}
+.player-summary{border:1px solid #dce5f0;border-radius:14px;background:#f9fbfe;padding:17px;margin:16px 0}
+.player-summary-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.player-summary h3{margin:4px 0;font-size:1.16rem;color:var(--navy)}
+.player-summary p{margin:4px 0;color:var(--muted);font-size:.86rem}
+.player-match-counter{font-weight:800;font-size:.82rem;color:var(--navy);white-space:nowrap}
+.player-summary-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}
+.player-summary-stats span{border:1px solid #e5ebf2;border-radius:10px;background:#fff;padding:10px;font-size:.76rem;color:var(--muted)}
+.player-summary-stats strong{display:block;font-size:1.25rem;color:var(--navy)}
+.match-with-action{border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:10px}
+.match-with-action .match-card{margin-bottom:4px}
+.match-action-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:4px 2px}
+.match-status{font-size:.72rem;font-weight:750}
+.match-status.completed{color:#176b43}.match-status.pending{color:#825c1c}
+.match-result-note{font-size:.75rem;color:var(--muted)}
+.mini-action{margin-left:auto;border:1px solid #d2deec;border-radius:8px;background:#fff;color:var(--navy);font-size:.76rem;font-weight:800;padding:7px 10px;cursor:pointer}
+.mini-action:hover{border-color:var(--crimson)}
+.match-schedule-note{font-size:.73rem;color:#795d28;margin:-3px 0 9px 8px}
+@media(max-width:850px){.group-progress{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:560px){.group-progress{grid-template-columns:repeat(2,minmax(0,1fr))}.player-summary-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.player-summary-head{flex-direction:column}}
