@@ -51,6 +51,7 @@
   <button class="tab" data-view="standings">Standings</button>
   <button class="tab" data-view="groups">Groups</button>
   <button class="tab" data-view="rules">Rules</button>
+  <button id="knockoutTab" class="tab" data-view="knockout" hidden>Knockout</button>
   <button id="notificationBtn" class="notification-btn" type="button" aria-label="Tournament notifications" aria-expanded="false" aria-controls="notificationPanel">
     <span class="notification-bell" aria-hidden="true">🔔</span>
     <span id="notificationDot" class="notification-dot" aria-hidden="true"></span>
@@ -175,6 +176,14 @@
         <div id="qualifiers"></div>
       </section>
     </div>
+  </section>
+
+  <section id="knockout" class="view" hidden>
+    <section class="panel">
+      <div class="section-heading"><div><span class="section-label">KNOCKOUT STAGE</span><h2>Road to the final</h2><p>Official draw and results appear here when published by the organizer. Select a match for details.</p></div></div>
+      <div id="knockoutBracket" class="knockout-bracket"></div>
+      <div id="knockoutDetail" class="knockout-detail" aria-live="polite">Select a match to see details.</div>
+    </section>
   </section>
 
   <section id="groups" class="view">
