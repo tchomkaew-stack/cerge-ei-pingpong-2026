@@ -839,18 +839,32 @@ function matchHasResult(m){
 function renderScoreForm(){
   const selector=$("scoreMatchSelect");
   if(!selector)return;
-  const previous=selector.value;
+  const oldMatch=selectedScoreMatch();
+  const oldKey=oldMatch?scoreMatchKey(oldMatch):"";
+  const search=sheetKey($("scoreMatchSearch")?.value||"");
   const matches=state.schedule.filter(m=>m.p1&&m.p2).slice()
     .sort((a,b)=>(a.date||"").localeCompare(b.date||"")||(a.time||"").localeCompare(b.time||""));
   const unique=new Map();
   for(const m of matches)unique.set(scoreMatchKey(m),m);
   scoreFormMatches=[...unique.values()];
-  selector.innerHTML='<option value="">Choose your match…</option>'+scoreFormMatches.map((m,i)=>{
-    const recorded=matchHasResult(m);
-    return '<option value="'+i+'">'+esc('Group '+m.group+' · '+m.p1+' vs '+m.p2+(recorded?' (recorded — can replace)':''))+'</option>';
-  }).join("");
-  if(previous!==""&&selector.querySelector('option[value="'+previous+'"]'))selector.value=previous;
-  showScoreMatch();
+  const visible=scoreFormMatches.map((m,i)=>({m,i})).filter(({m})=>
+    !search||sheetKey(m.p1).includes(search)||sheetKey(m.p2).includes(search)||
+    sheetKey("group "+m.group).includes(search));
+  selector.innerHTML='<option value="">'+(visible.length?"Choose your match…":"No matches found — try another name")+'</option>'+
+    visible.map(({m,i})=>{
+      const recorded=matchHasResult(m);
+      return '<option value="'+i+'">'+esc('Group '+m.group+' · '+m.p1+' vs '+m.p2+
+        (recorded?' (recorded — can replace)':''))+'</option>';
+    }).join("");
+  const current=visible.find(({m})=>scoreMatchKey(m)===oldKey);
+  if(current)selector.value=String(current.i);
+  const newMatch=selectedScoreMatch();
+  const changed=scoreMatchKey(newMatch||{group:"",p1:"",p2:""})!==oldKey;
+  if(changed){
+    document.querySelectorAll("#scoreGames input").forEach(x=>x.value="");
+    if($("scoreEntryFeedback"))$("scoreEntryFeedback").textContent="";
+  }
+  showScoreMatch(!changed);
 }
 let scoreFormMatches=[];
 function selectedScoreMatch(){
@@ -858,7 +872,7 @@ function selectedScoreMatch(){
   return v!=="" && v!=null ? scoreFormMatches[Number(v)] : null;
 }
 function scoreEntryIsForfeit(){return $("scoreResultType")?.value==="forfeit"}
-function showScoreMatch(){
+function showScoreMatch(preserveFields=false){
   const m=selectedScoreMatch();
   const names=$("scoreSelectedMatch"),games=$("scoreGames");
   if(!names||!games)return;
@@ -874,9 +888,10 @@ function showScoreMatch(){
   }
   const forfeitWinner=$("scoreForfeitWinner");
   if(forfeitWinner){
+    const oldWinner=preserveFields?forfeitWinner.value:"";
     forfeitWinner.innerHTML='<option value="">Choose the winner…</option>'+
       (m?'<option value="p1">'+esc(m.p1)+'</option><option value="p2">'+esc(m.p2)+'</option>':"");
-    forfeitWinner.value="";
+    forfeitWinner.value=oldWinner;
   }
   if(!games.children.length){
     games.innerHTML=[0,1,2,3,4].map(i=>'<div class="score-game-row"><span>Game '+(i+1)+'</span><input aria-label="Game '+(i+1)+' Player 1 points" type="number" min="0" max="99" inputmode="numeric" data-side="0" data-game="'+i+'" placeholder="P1"><b>–</b><input aria-label="Game '+(i+1)+' Player 2 points" type="number" min="0" max="99" inputmode="numeric" data-side="1" data-game="'+i+'" placeholder="P2"></div>').join("");
@@ -1037,6 +1052,7 @@ $("myMatches").addEventListener("click",e=>{
   }
   const btn=e.target.closest("[data-record-match]");
   if(!btn)return;
+  if($("scoreMatchSearch"))$("scoreMatchSearch").value="";
   renderScoreForm();
   const index=scoreFormMatches.findIndex(m=>scoreMatchKey(m)===btn.dataset.recordMatch);
   if(index<0)return;
@@ -1054,7 +1070,12 @@ document.addEventListener("visibilitychange",()=>{
 window.addEventListener("focus",()=>{
   if(!document.hidden&&!scoreSubmitting&&Date.now()-lastRefreshAt>60000)refreshData();
 });
-$("scoreMatchSelect")?.addEventListener("change",()=>{document.querySelectorAll("#scoreGames input").forEach(x=>x.value="");showScoreMatch()});
+$("scoreMatchSearch")?.addEventListener("input",renderScoreForm);
+$("scoreMatchSelect")?.addEventListener("change",()=>{
+  document.querySelectorAll("#scoreGames input").forEach(x=>x.value="");
+  if($("scoreEntryFeedback"))$("scoreEntryFeedback").textContent="";
+  showScoreMatch(false);
+});
 $("scoreGames")?.addEventListener("input",()=>{$("scoreEntryFeedback").textContent="";validateScoreForm()});
 $("scoreResultType")?.addEventListener("change",()=>{$("scoreEntryFeedback").textContent="";updateScoreEntryType()});
 $("scoreForfeitWinner")?.addEventListener("change",()=>{$("scoreEntryFeedback").textContent="";validateScoreForm()});
