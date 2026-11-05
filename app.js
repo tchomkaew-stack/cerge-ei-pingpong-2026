@@ -15,7 +15,8 @@ const FALLBACK_ANNOUNCEMENTS=[{
   start:"2026-10-31T00:00:00+01:00",
   expiry:"2026-11-27T23:59:00+01:00"
 }];
-const SEEN_NOTICES_KEY="cerge_pingpong_seen_announcements_v1";
+const SEEN_NOTICES_KEY="cerge_pingpong_seen_announcements_v2";
+const LEGACY_SEEN_NOTICES_KEY="cerge_pingpong_seen_announcements_v1";
 const FALLBACK_SCHEDULE=`1|2026-11-03|14:30|C|Marek Kapička|Michael Schulz
 1|2026-11-03|15:15|B|Ctirad Slavik|Filip Galla
 1|2026-11-03|16:00|A|Stephanie Ettmeier|Nazar Rudyi
@@ -347,10 +348,29 @@ function activeAnnouncements(){
     return (!s||now>=s)&&(!e||now<=e);
   });
 }
+// A content revision should be new even when the organizer reuses its sheet ID.
+function noticeVersion(a){
+  const content=[a.id,a.title,a.message,a.link,a.start,a.expiry].join("\u001f");
+  let hash=2166136261;
+  for(let i=0;i<content.length;i++){
+    hash^=content.charCodeAt(i);
+    hash=Math.imul(hash,16777619);
+  }
+  return a.id+":"+((hash>>>0).toString(36));
+}
 function getSeenNotices(){
   try{
-    const value=JSON.parse(localStorage.getItem(SEEN_NOTICES_KEY)||"[]");
-    return new Set(Array.isArray(value)?value:[]);
+    const saved=localStorage.getItem(SEEN_NOTICES_KEY);
+    if(saved!==null){
+      const parsed=JSON.parse(saved);
+      return new Set(Array.isArray(parsed)?parsed:[]);
+    }
+    // Migrate existing read notices once, without marking edited notices read forever.
+    const legacy=JSON.parse(localStorage.getItem(LEGACY_SEEN_NOTICES_KEY)||"[]");
+    const oldIds=new Set(Array.isArray(legacy)?legacy:[]);
+    const migrated=new Set(activeAnnouncements().filter(a=>oldIds.has(a.id)).map(noticeVersion));
+    saveSeenNotices(migrated);
+    return migrated;
   }catch{return new Set()}
 }
 function saveSeenNotices(set){
@@ -361,25 +381,37 @@ function noticeExpiryLabel(v){
   if(!d)return "";
   return "Until "+new Intl.DateTimeFormat("en-GB",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}).format(d);
 }
+let openedNotificationHighlights=new Set();
 function renderNotifications(){
   const btn=$("notificationBtn"),list=$("notificationList"),count=$("notificationCount");
   if(!btn||!list)return;
   const active=activeAnnouncements();
   const seen=getSeenNotices();
-  const unseen=active.filter(a=>!seen.has(a.id));
-  btn.classList.toggle("has-unseen",active.length>0);
-  count.textContent=active.length?active.length+" active tournament notification"+(active.length===1?"":"s"):"No active tournament notifications";
+  const unseen=active.filter(a=>!seen.has(noticeVersion(a)));
+  const panel=$("notificationPanel");
+  const highlights=panel&&!panel.hidden?openedNotificationHighlights:new Set(unseen.map(noticeVersion));
+  btn.classList.toggle("has-unseen",unseen.length>0);
+  btn.setAttribute("aria-label",unseen.length
+    ?unseen.length+" unread tournament "+(unseen.length===1?"notification":"notifications")
+    :"Tournament notifications");
+  count.textContent=unseen.length
+    ?unseen.length+" new tournament "+(unseen.length===1?"notification":"notifications")
+    :active.length?active.length+" tournament "+(active.length===1?"update":"updates")+", all read"
+      :"No active tournament notifications";
   list.innerHTML=active.length?active.map(a=>{
-    const internal=["home","schedule","standings","groups","rules"].includes(a.link.toLowerCase());
+    const isNew=highlights.has(noticeVersion(a))||(!seen.has(noticeVersion(a))&&panel&&!panel.hidden);
+    const internal=["home","schedule","standings","groups","rules","knockout"].includes(a.link.toLowerCase());
+    // Only allow ordinary web URLs from the announcements sheet.
+    const external=/^https?:\/\//i.test(a.link);
     const action=a.link?(internal
-      ?`<button class="notification-link" type="button" data-notice-view="${esc(a.link.toLowerCase())}">View ${esc(a.link.charAt(0).toUpperCase()+a.link.slice(1).toLowerCase())} →</button>`
-      :`<a class="notification-link" href="${esc(a.link)}" target="_blank" rel="noopener noreferrer">Open update →</a>`):"";
-    return `<article class="notification-item">
-      <div class="notification-item-title">${esc(a.title)}</div>
-      <p>${esc(a.message)}</p>
-      ${a.expiry?`<span class="notification-time">${esc(noticeExpiryLabel(a.expiry))}</span>`:""}
-      ${action}
-    </article>`;
+      ?'<button class="notification-link" type="button" data-notice-view="'+esc(a.link.toLowerCase())+'">View '+esc(a.link.charAt(0).toUpperCase()+a.link.slice(1).toLowerCase())+' →</button>'
+      :external?'<a class="notification-link" href="'+esc(a.link)+'" target="_blank" rel="noopener noreferrer">Open update →</a>':""):"";
+    return '<article class="notification-item'+(isNew?' notification-item-new':'')+'">'+
+      '<div class="notification-item-heading"><div class="notification-item-title">'+esc(a.title)+'</div>'+
+      (isNew?'<span class="notification-new-label">New</span>':"")+'</div>'+
+      '<p>'+esc(a.message)+'</p>'+
+      (a.expiry?'<span class="notification-time">'+esc(noticeExpiryLabel(a.expiry))+'</span>':"")+
+      action+'</article>';
   }).join(""):'<p class="notification-empty">No active updates right now.</p>';
 }
 function openView(view){
@@ -398,10 +430,12 @@ function openView(view){
 function openNotifications(){
   const panel=$("notificationPanel"),btn=$("notificationBtn");
   if(!panel||!btn)return;
+  const seen=getSeenNotices();
+  const active=activeAnnouncements();
+  openedNotificationHighlights=new Set(active.filter(a=>!seen.has(noticeVersion(a))).map(noticeVersion));
   panel.hidden=false;
   btn.setAttribute("aria-expanded","true");
-  const seen=getSeenNotices();
-  activeAnnouncements().forEach(a=>seen.add(a.id));
+  active.forEach(a=>seen.add(noticeVersion(a)));
   saveSeenNotices(seen);
   renderNotifications();
 }
@@ -409,6 +443,7 @@ function closeNotifications(){
   const panel=$("notificationPanel"),btn=$("notificationBtn");
   if(panel)panel.hidden=true;
   if(btn)btn.setAttribute("aria-expanded","false");
+  openedNotificationHighlights.clear();
 }
 function scorePair(s){
   const m=norm(s).match(/^(\d+)\s*[-–:]\s*(\d+)$/);
