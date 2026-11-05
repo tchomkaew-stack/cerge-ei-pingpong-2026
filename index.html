@@ -10,29 +10,75 @@
 <body>
 <header class="hero">
   <div class="hero-court" aria-hidden="true"></div>
-  <!-- Decorative Prague rooftops, Charles Bridge and a ping-pong rally. -->
+  <!-- Stylized Charles Bridge: stone arches, bridge towers, statues, Prague Castle behind. -->
   <svg class="hero-prague-art" viewBox="0 0 760 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-    <g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M30 288H744M62 278H725"/>
-      <path d="M76 278V240H111V278M113 278V231H145V278M145 278V246H175V278M175 278V225H210V278M210 278V239H247V278"/>
-      <path d="M90 240V222L110 204L130 222V231M181 225V203L194 191L208 203V225"/>
-      <path d="M257 278V160H312V278M249 160H320M263 160V143H306V160M276 143V119L284 97L292 119V143M284 97V84"/>
-      <path d="M264 185H305M273 185V203M296 185V203M273 218H297M273 233H297M273 248H297"/>
-      <path d="M340 278V216H380V278M339 216L359 195L381 216M354 195V181H365V195"/>
-      <path d="M391 278V188H451V278M389 188L420 164L454 188M405 164V123L415 99L425 123V164M437 165V119L445 100L453 119V188"/>
-      <path d="M414 99V86M445 100V86M406 206H438M410 221H433M418 237V254"/>
-      <path d="M468 278V226H497V278M499 278V210H528V278M528 278V238H560V278"/>
-      <path d="M476 226V209L482 201L489 209V226M503 210V190L513 177L523 190V210"/>
-      <path d="M45 290H742M55 307H742"/>
-      <path d="M77 307V290M151 307V290M226 307V290M301 307V290M376 307V290M451 307V290M526 307V290M601 307V290M676 307V290"/>
-      <path d="M77 307Q114 277 151 307M151 307Q188 277 226 307M226 307Q263 277 301 307M301 307Q338 277 376 307M376 307Q413 277 451 307M451 307Q488 277 526 307M526 307Q563 277 601 307M601 307Q638 277 676 307"/>
-      <path d="M480 88Q557 16 662 88" stroke-dasharray="3 10"/>
-      <circle cx="480" cy="88" r="7" fill="currentColor" stroke="none"/>
-      <ellipse cx="677" cy="107" rx="31" ry="39" transform="rotate(-25 677 107)"/>
-      <path d="M688 141L709 184" stroke-width="10"/>
+    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Distant hill and Prague Castle silhouette, including St Vitus Cathedral spires. -->
+      <g stroke-width="2" opacity=".66">
+        <path d="M207 238Q250 204 290 211Q333 195 370 205Q430 186 483 216L535 238"/>
+        <path d="M241 213V178H281V211M251 178V161H275V178M257 161L263 148L269 161"/>
+        <path d="M285 209V171H315V205M291 171V159H310V171"/>
+        <path d="M321 203V151H359V199M318 151L340 128L362 151"/>
+        <path d="M330 150V118L336 96L342 118V150M347 150V112L353 90L359 112V150"/>
+        <path d="M336 96V83M353 90V77"/>
+        <path d="M370 203V169H417V199M369 169L393 154L418 169"/>
+        <path d="M427 206V180H465V212M437 180V166H453V180"/>
+        <path d="M252 191H276M294 185H309M377 184H409"/>
+      </g>
+      <!-- Lesser Town bridge towers on the west end: one smaller Romanesque, one Gothic. -->
+      <g stroke-width="2.6">
+        <path d="M89 251V171H129V251M85 171H133M91 171V155H127V171M98 155L109 135L121 155M109 135V123"/>
+        <path d="M146 251V146H199V251M142 146H203M150 146V132H195V146M153 132L172 95L192 132M172 95V79"/>
+        <path d="M154 164H191M162 177V194M183 177V194M161 208H184"/>
+        <path d="M129 203H146M129 214H146"/>
+      </g>
+      <!-- Old Town Bridge Tower: distinctive steep Gothic roof, pinnacles and gate. -->
+      <g stroke-width="2.8">
+        <path d="M570 254V137H649V254M564 137H655"/>
+        <path d="M575 137V122H644V137M582 122L609 79L638 122"/>
+        <path d="M609 79V61M581 122L575 105L570 122M638 122L644 105L649 122"/>
+        <path d="M585 153H635M589 165H632M593 180H627"/>
+        <path d="M597 254V214Q609 193 621 214V254"/>
+        <path d="M591 190H629M596 149V160M624 149V160"/>
+        <path d="M579 137V149M642 137V149"/>
+      </g>
+      <!-- The long stone Charles Bridge, parapet, statues and repeated semicircular arches. -->
+      <g stroke-width="2.7">
+        <path d="M57 246H704M57 255H704"/>
+        <path d="M64 255V309H702V255"/>
+        <path d="M72 309V292Q94 263 116 292V309"/>
+        <path d="M126 309V292Q148 263 170 292V309"/>
+        <path d="M180 309V292Q202 263 224 292V309"/>
+        <path d="M234 309V292Q256 263 278 292V309"/>
+        <path d="M288 309V292Q310 263 332 292V309"/>
+        <path d="M342 309V292Q364 263 386 292V309"/>
+        <path d="M396 309V292Q418 263 440 292V309"/>
+        <path d="M450 309V292Q472 263 494 292V309"/>
+        <path d="M504 309V292Q526 263 548 292V309"/>
+        <path d="M558 309V292Q580 263 602 292V309"/>
+        <path d="M612 309V292Q634 263 656 292V309"/>
+        <path d="M666 309V292Q682 273 698 292V309"/>
+        <path d="M70 309H704"/>
+      </g>
+      <g stroke-width="2.1">
+        <path d="M226 246V230M222 230L226 219L230 230M215 246H237"/>
+        <path d="M279 246V229M274 229L279 216L284 229M270 246H288"/>
+        <path d="M392 246V229M387 229L392 218L397 229M382 246H402"/>
+        <path d="M448 246V230M443 230L448 219L453 230M439 246H457"/>
+        <path d="M510 246V230M505 230L510 217L515 230M500 246H520"/>
+      </g>
+      <!-- Vltava waterlines; small ball and paddle keep the sport visible. -->
+      <g stroke-width="2" opacity=".55">
+        <path d="M72 320H201M226 320H355M385 320H526M557 320H699"/>
+      </g>
+      <g stroke-width="2.6">
+        <path d="M502 95Q556 34 668 78" stroke-dasharray="3 10"/>
+        <circle cx="502" cy="95" r="6.5" fill="currentColor" stroke="none"/>
+        <ellipse cx="689" cy="101" rx="24" ry="31" transform="rotate(-27 689 101)"/>
+        <path d="M699 129L718 162" stroke-width="8"/>
+      </g>
     </g>
-  </svg>
-  <div class="hero-inner">
+  </svg>  <div class="hero-inner">
     <div class="hero-copy">
       <div class="hero-kicker">CERGE-EI · PRAGUE · FALL 2026</div>
       <div class="hero-title-row">
