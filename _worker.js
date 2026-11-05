@@ -1,5 +1,5 @@
 const SHEET_ID = "1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI";
-const ALLOWED = new Set(["Groups", "Schedule", "Results recording", "Standing", "Announcements"]);
+const ALLOWED = new Set(["Groups", "Schedule", "Results recording", "Standing", "Announcements", "Knockout"]);
 
 export default {
   async fetch(request, env) {
@@ -60,7 +60,7 @@ export default {
         if (!upstream.ok || !result.ok) {
           return Response.json({ ok: false, error: result.error || "Google Sheets could not save the match." }, { status: upstream.ok ? 400 : 502 });
         }
-        return Response.json({ ok: true, winner: result.winner, setScore: result.setScore, forfeit: Boolean(result.forfeit) }, { headers: { "cache-control": "no-store" } });
+        return Response.json({ ok: true, winner: result.winner, setScore: result.setScore, forfeit: Boolean(result.forfeit), auditLogged: result.auditLogged, auditWarning: result.auditWarning || "" }, { headers: { "cache-control": "no-store" } });
       } catch (e) {
         return Response.json({ ok: false, error: String(e.message || e) }, { status: 400 });
       }
