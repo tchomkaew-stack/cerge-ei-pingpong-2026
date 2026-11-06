@@ -668,7 +668,7 @@ function validateResultData(results,schedule){
       for(const score of r.scores){
         const pair=scorePair(score);
         if(!pair||Math.max(...pair)<11||Math.abs(pair[0]-pair[1])<2||(Math.max(...pair)>11&&Math.abs(pair[0]-pair[1])!==2))
-          errors.push("Invalid game score: "+r.p1+" / "+r.p2);
+          errors.push("Group "+r.group+": "+r.p1+" vs "+r.p2+" — invalid game score "+score+" (a game must be won by 2 points).");
         if(pair){if(pair[0]>pair[1])p1++;else p2++;}
       }
       if(Math.max(p1,p2)!==3||sheetKey(p1===3?r.p1:r.p2)!==sheetKey(r.winner))
@@ -763,7 +763,7 @@ async function refreshData(){
       // even if the schedule is cached or a separate integrity check warns.
       state.results=parsed;
       resultsFresh=true;
-      if(issues.length)errors.push("Some result entries need review ("+issues.length+"). Live results are still displayed.");
+      if(issues.length)errors.push("Results recording: "+issues.slice(0,2).join(" | ")+(issues.length>2?" | "+(issues.length-2)+" more issue(s).":"")+" Live results are still displayed.");
     }
     if(loaded.Knockout)state.knockout=parseKnockout(loaded.Knockout);
     const sheetStandings=loaded.Standing?parseStandings(loaded.Standing):[];
