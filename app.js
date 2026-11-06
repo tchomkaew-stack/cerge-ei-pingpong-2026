@@ -1063,7 +1063,7 @@ function renderStandings(){
   const context=$("wildcardContext");
   if(context){
     if(unresolvedTie(wc[1],wc[2])){
-      context.textContent="The final wildcard position is tied on every ranking criterion. Organizer decision pending.";
+      context.textContent="The final wildcard position is tied on every ranking criterion. A tiebreak decision is pending.";
     }else if(wc.length>=3&&wc[1].wins===wc[2].wins){
       context.textContent="Close race: the second and third wildcard candidates are tied on wins. The published tiebreakers determine their order.";
     }else if(wc.length>=3&&wc[1].wins-wc[2].wins===1){
