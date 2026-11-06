@@ -1014,7 +1014,9 @@ function renderSchedule(){
       '<div class="mobile-schedule-top"><strong>Group '+esc(m.group)+'</strong><span>Week '+esc(m.week)+'</span></div>'+
       '<div class="mobile-schedule-players">'+esc(m.p1)+' <span>vs</span> '+esc(m.p2)+'</div>'+
       '<div class="mobile-schedule-bottom"><span>'+esc(fmtDate(m.date))+' · '+esc(m.time)+' Prague</span>'+
-      '<span class="schedule-table-status '+(r?"completed":past?"pending":"scheduled")+'">'+esc(status)+'</span></div></article>';
+      '<span class="schedule-table-status '+(r?"completed":past?"pending":"scheduled")+'">'+esc(status)+'</span></div>'+
+      (r?"":'<button class="mini-action schedule-reschedule" type="button" data-reschedule-match="'+esc(pairKey(m.group,m.p1,m.p2))+'">Reschedule</button>')+
+      '</article>';
   }).join("");
   $("scheduleTableWrap").innerHTML='<div class="mobile-schedule-list">'+cards+'</div><div class="table-wrap desktop-schedule-table"><table><thead><tr>'+
     '<th>Week</th><th>Date</th><th>Time</th><th>Group</th><th>Player 1</th><th>Player 2</th><th>Status</th>'+
@@ -1025,7 +1027,9 @@ function renderSchedule(){
         past?'Time passed · update pending':'Scheduled';
       return '<tr><td>'+esc(m.week)+'</td><td>'+esc(fmtDate(m.date))+'</td><td>'+esc(m.time)+'</td>'+
         '<td>'+esc(m.group)+'</td><td>'+esc(m.p1)+'</td><td>'+esc(m.p2)+rematchMarkup(m,true)+'</td>'+
-        '<td><span class="schedule-table-status '+(r?'completed':past?'pending':'scheduled')+'">'+esc(label)+'</span></td></tr>';
+        '<td><span class="schedule-table-status '+(r?'completed':past?'pending':'scheduled')+'">'+esc(label)+'</span>'+
+        (r?"":'<button class="mini-action schedule-reschedule" type="button" data-reschedule-match="'+esc(pairKey(m.group,m.p1,m.p2))+'">Reschedule</button>')+
+        '</td></tr>';
     }).join("")+'</tbody></table></div>'+
     (!matches.length?'<p class="muted-empty">No matches found for these filters.</p>':"");
 }
@@ -1423,6 +1427,10 @@ $("myMatches").addEventListener("click",e=>{
   if($("scoreEntryFeedback"))$("scoreEntryFeedback").textContent="";
   showScoreMatch(false);
   openView("record-score");
+});
+$("scheduleTableWrap")?.addEventListener("click",event=>{
+  const button=event.target.closest("[data-reschedule-match]");
+  if(button)openRescheduleMatch(button.dataset.rescheduleMatch);
 });
 $("scheduleSearch").addEventListener("input",renderSchedule);
 $("resultsSearch")?.addEventListener("input",renderResults);
