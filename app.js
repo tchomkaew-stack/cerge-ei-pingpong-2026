@@ -847,6 +847,10 @@ function renderFeaturedRematches(){
     '</article>').join("");
 }
 
+// The homepage celebrates played matches; forfeits remain recorded everywhere else.
+function homepageVisibleResults(results){
+  return sortedResults(results.filter(r=>String(r.forfeit||"").trim().toUpperCase()!=="Y")).slice(0,6);
+}
 function renderHome(){
   const done=new Set(state.results.map(r=>pairKey(r.group,r.p1,r.p2)));
   const remaining=state.schedule.filter(m=>!done.has(pairKey(m.group,m.p1,m.p2)));
@@ -864,10 +868,10 @@ function renderHome(){
     (upcomingToday.length?'<div class="match-period-label">Today · Prague time</div>'+cards(upcomingToday):"")+
     (other.length?'<div class="match-period-label">'+(upcomingToday.length?"Coming up / awaiting updates":"Next fixtures · Prague time")+'</div>'+cards(other):"")
     :"All group-stage matches completed.";
-  const latest=sortedResults(state.results).slice(0,6);
+  const latest=homepageVisibleResults(state.results);
   $("latestResults").innerHTML=latest.length?latest.map(r=>
     '<div class="result-card"><div class="match-meta">'+(r.date?esc(fmtDate(r.date))+' · ':'')+'Group '+esc(r.group)+'</div>'+
-    '<div><strong>'+esc(r.winner)+'</strong> won'+(r.forfeit==="Y"?" by forfeit":resultScoreSummary(r)==="Result recorded"?"":" "+esc(resultScoreSummary(r)))+
+    '<div><strong>'+esc(r.winner)+'</strong> won'+(resultScoreSummary(r)==="Result recorded"?"":" "+esc(resultScoreSummary(r)))+
     (isFiveGameMatch(r)?' <span class="close-match-tag">Five-game thriller</span>':"")+'</div>'+
     '<div class="small-note">'+esc(r.p1)+' vs '+esc(r.p2)+'</div></div>').join(""):"No results recorded yet.";
   renderProgress();
