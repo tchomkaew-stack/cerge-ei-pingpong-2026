@@ -16,6 +16,46 @@ export default {
       return Response.json({ enabled: configured }, { headers: { "cache-control": "no-store" } });
     }
 
+    // Same trusted server-to-server bridge as score recording. No player PIN.
+    if (url.pathname === "/api/reschedule" && request.method === "POST") {
+      if (!env.SCORE_WRITE_URL || !env.SCORE_WRITE_SECRET)
+        return Response.json({ok:false,error:"Schedule editing has not been connected yet."},{status:503});
+      const origin=request.headers.get("origin");
+      if(origin && origin!==url.origin)
+        return Response.json({ok:false,error:"Invalid origin"},{status:403});
+      if((Number(request.headers.get("content-length"))||0)>2000)
+        return Response.json({ok:false,error:"Submission too large"},{status:413});
+      try{
+        const input=await request.json();
+        if(!input || typeof input!=="object" || Array.isArray(input) ||
+           !/^[A-G]$/.test(input.group) || typeof input.p1!=="string" ||
+           typeof input.p2!=="string" || !input.p1.trim() || !input.p2.trim() ||
+           input.p1.length>100 || input.p2.length>100 ||
+           typeof input.date!=="string" || typeof input.time!=="string" ||
+           !/^20\d{2}-\d{2}-\d{2}$/.test(input.date) ||
+           !/^([01]\d|2[0-3]):[0-5]\d$/.test(input.time))
+          return Response.json({ok:false,error:"Choose a match, date, and time."},{status:400});
+        const target=String(env.SCORE_WRITE_URL);
+        if(!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(target))
+          throw Error("Invalid write endpoint");
+        const upstream=await fetch(target,{
+          method:"POST",headers:{"content-type":"text/plain;charset=UTF-8"},
+          body:JSON.stringify({secret:String(env.SCORE_WRITE_SECRET),action:"reschedule",
+            group:input.group,p1:input.p1,p2:input.p2,date:input.date,time:input.time}),
+          redirect:"follow"
+        });
+        const raw=await upstream.text();
+        let data;
+        try{data=JSON.parse(raw)}catch{throw Error("Google Sheets returned an unexpected response. The Apps Script may need redeployment.");}
+        if(!upstream.ok||!data.ok)
+          return Response.json({ok:false,error:data.error||"Could not save the new time."},{status:upstream.ok?400:502});
+        return Response.json({ok:true,date:data.date,time:data.time,auditLogged:data.auditLogged,
+          auditWarning:data.auditWarning||""},{headers:{"cache-control":"no-store"}});
+      }catch(err){
+        return Response.json({ok:false,error:String(err.message||err)},{status:400});
+      }
+    }
+
     if (url.pathname === "/api/submit-score" && request.method === "POST") {
       const configured = Boolean(env.SCORE_WRITE_URL && env.SCORE_WRITE_SECRET);
       if (!configured) return Response.json({ ok: false, error: "Direct score entry has not been connected yet. Please use Google Sheets." }, { status: 503 });
