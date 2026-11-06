@@ -36,7 +36,22 @@ function validateScores_(scores) {
 function ensureColumn_(sheet,col) {
   if(col>sheet.getMaxColumns())sheet.insertColumnsAfter(sheet.getMaxColumns(),col-sheet.getMaxColumns());
 }
-// Rescheduling changes only Schedule!B:C; it never edits Results recording.
+// A reschedule updates date and time in BOTH Schedule and Results recording.
+// Identify the fixture by group and unordered player pair, never by date/time.
+function findMatchRow_(sheet,group,pair) {
+  const rows=sheet.getDataRange().getDisplayValues();
+  let found=-1;
+  for(let i=0;i<rows.length;i++){
+    const row=rows[i];
+    if(normalized_(row[3])===normalized_(group) &&
+       [normalized_(row[4]),normalized_(row[5])].sort().join('|')===pair){
+      if(found>=0)throw Error('Duplicate match rows in '+sheet.getName()+'. Contact the organizer.');
+      found=i;
+    }
+  }
+  if(found<0)throw Error('Match not found in '+sheet.getName()+'. No changes were saved.');
+  return found+1;
+}
 function reschedule_(body,ss) {
   const group=String(body.group||'').trim().toUpperCase();
   const p1=String(body.p1||'').trim(),p2=String(body.p2||'').trim();
@@ -49,37 +64,63 @@ function reschedule_(body,ss) {
   if(d.getFullYear()!==year||d.getMonth()!==month-1||d.getDate()!==day||
      date<'2026-11-01'||date>'2027-06-30')throw Error('Date must be within the tournament season.');
   if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(time))throw Error('Use a valid 24-hour time (HH:MM).');
-  const sheet=ss.getSheetByName('Schedule');
-  if(!sheet)throw Error('Schedule tab not found.');
-  const rows=sheet.getDataRange().getDisplayValues();
+
+  const schedule=ss.getSheetByName('Schedule');
+  const results=ss.getSheetByName(SCORE_SHEET);
+  if(!schedule||!results)throw Error('Schedule or Results recording tab not found. No changes were saved.');
   const pair=[normalized_(p1),normalized_(p2)].sort().join('|');
-  let found=-1;
-  for(let i=0;i<rows.length;i++){
-    const row=rows[i];
-    if(normalized_(row[3])===normalized_(group) &&
-       [normalized_(row[4]),normalized_(row[5])].sort().join('|')===pair){
-      if(found>=0)throw Error('Duplicate Schedule rows for this match; contact the organizer.');
-      found=i;
-    }
+  // Verify BOTH rows before writing anything. The rows may be in different orders.
+  const scheduleRow=findMatchRow_(schedule,group,pair);
+  const resultsRow=findMatchRow_(results,group,pair);
+  const scheduleRange=schedule.getRange(scheduleRow,2,1,2);
+  const resultsRange=results.getRange(resultsRow,2,1,2);
+  const oldSchedule=scheduleRange.getValues();
+  const oldResults=resultsRange.getValues();
+  const oldScheduleDateFormat=schedule.getRange(scheduleRow,2).getNumberFormat();
+  const oldResultsDateFormat=results.getRange(resultsRow,2).getNumberFormat();
+  const scheduleDisplay=schedule.getRange(scheduleRow,2,1,2).getDisplayValues()[0];
+  const resultsDisplay=results.getRange(resultsRow,2,1,2).getDisplayValues()[0];
+
+  // Sheets has no cross-tab transaction. On a write failure, attempt to
+  // restore both original rows instead of leaving them out of sync.
+  try{
+    resultsRange.setValues([[d,time]]);
+    results.getRange(resultsRow,2).setNumberFormat('yyyy-mm-dd');
+    scheduleRange.setValues([[d,time]]);
+    schedule.getRange(scheduleRow,2).setNumberFormat('yyyy-mm-dd');
+    SpreadsheetApp.flush();
+  }catch(writeError){
+    const rollbackFailures=[];
+    try{
+      resultsRange.setValues(oldResults);
+      results.getRange(resultsRow,2).setNumberFormat(oldResultsDateFormat);
+    }catch(err){rollbackFailures.push('Results recording: '+String(err.message||err))}
+    try{
+      scheduleRange.setValues(oldSchedule);
+      schedule.getRange(scheduleRow,2).setNumberFormat(oldScheduleDateFormat);
+    }catch(err){rollbackFailures.push('Schedule: '+String(err.message||err))}
+    try{SpreadsheetApp.flush()}catch(err){rollbackFailures.push('Flush: '+String(err.message||err))}
+    throw Error('Could not save the reschedule. '+String(writeError.message||writeError)+
+      (rollbackFailures.length?' Rollback may be incomplete; check both tabs: '+rollbackFailures.join('; '):
+       ' Original dates and times were restored.'));
   }
-  if(found<0)throw Error('Match not found in Schedule. Refresh the website and try again.');
-  const previousDate=String(rows[found][1]||''),previousTime=String(rows[found][2]||'');
-  sheet.getRange(found+1,2).setValue(d).setNumberFormat('yyyy-mm-dd');
-  sheet.getRange(found+1,3).setValue(time);
-  SpreadsheetApp.flush();
+
   let auditLogged=true,auditWarning='';
   try{
     let audit=ss.getSheetByName('Schedule change history');
     if(!audit){
       audit=ss.insertSheet('Schedule change history');
-      audit.appendRow(['Timestamp','Group','Player 1','Player 2','Previous date','Previous time','New date','New time']);
+      audit.appendRow(['Timestamp','Group','Player 1','Player 2',
+        'Previous Schedule date','Previous Schedule time',
+        'Previous Results date','Previous Results time','New date','New time']);
     }
-    audit.appendRow([new Date(),group,p1,p2,previousDate,previousTime,date,time]);
+    audit.appendRow([new Date(),group,p1,p2,
+      scheduleDisplay[0],scheduleDisplay[1],resultsDisplay[0],resultsDisplay[1],date,time]);
   }catch(err){
     auditLogged=false;
-    auditWarning='Schedule saved, but change history could not be recorded: '+String(err.message||err);
+    auditWarning='Both tabs were updated, but change history could not be recorded: '+String(err.message||err);
   }
-  return {ok:true,date,time,previousDate,previousTime,auditLogged,auditWarning};
+  return {ok:true,date,time,auditLogged,auditWarning};
 }
 
 function doPost(e) {
