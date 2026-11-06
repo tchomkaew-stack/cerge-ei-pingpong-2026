@@ -34,11 +34,12 @@ test('baseline fixture structure contains 105 matches and 42 players',()=>{
   assert.equal(fixtures.length,105);
   assert.equal(groups.length,42);
 });
-test('schedule validation flags duplicate pairs instead of silently accepting them',()=>{
-  const errors=helpers.validateScheduleData(fixtures,groups);
-  // This historical fallback contains a repeated C fixture. Do not invent the
-  // replacement pairing: correct the actual live Sheet with the organizer.
-  assert.ok(errors.some(x=>x.includes('Duplicate fixture')));
+test('all fallback fixtures are unique and structurally valid',()=>{
+  assert.deepEqual(helpers.validateScheduleData(fixtures,groups),[]);
+});
+test('schedule validation detects a duplicate fixture',()=>{
+  const duplicate=[...fixtures,fixtures[0]];
+  assert.ok(helpers.validateScheduleData(duplicate,groups).some(x=>x.includes('Duplicate fixture')));
 });
 test('valid scores are accepted; invalid scores and duplicate results are flagged',()=>{
   const m=fixtures[0];
