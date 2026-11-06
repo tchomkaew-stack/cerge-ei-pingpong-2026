@@ -5,7 +5,7 @@ Participants can record a new result, correct an existing result, or record a fo
 ## Architecture
 - Cloudflare Pages Worker `POST /api/submit-score` validates a best-of-five match and forwards to the Apps Script.
 - `POST /api/reschedule` uses the **same server-only Apps Script endpoint and secret**, with `action: "reschedule"`. It validates the new date and time and identifies the match by group and both player names, regardless of player order.
-- Apps Script edits **only Schedule!B:C** (Date and Time). It preserves Week, Group, both player names, and the entire **Results recording** tab. It also appends to **Schedule change history**.
+- Apps Script updates **Schedule!B:C and Results recording!B:C** (Date and Time) for the same group/player pair. It preserves Week, Group, player names, recorded game scores, winner, and all other columns. It checks that both match rows exist before writing, attempts rollback on write failure, and appends to **Schedule change history**.
 - The Worker and Apps Script share a **server-side-only** `SCORE_WRITE_SECRET`. Participants never see or enter it.
 - The bound Apps Script independently validates scores, checks that the match exists in **Results recording**, locks concurrent writes, and updates columns **G:K** (game scores) and **L** (winner). It does **not** overwrite the set-score formula in **M**.
 - Forfeits are recorded in a named **Forfeit (Y/N)** column, created at the end of the sheet if absent. A forfeit awards a win/loss but no games or points.
@@ -24,7 +24,7 @@ Participants can record a new result, correct an existing result, or record a fo
 6. **No `SCORE_ENTRY_PIN` is required.** Remove any obsolete PIN setting if one exists.
 
 ## Test carefully
-Use a copy of the sheet or a mutually agreed test match, not an arbitrary completed match. Verify new scores, correction, and forfeit; check that the formula in column M remains intact, that the new flag and timestamp columns exist, and that **Result change history** records both versions. Then verify the public site refreshes its standings. Also test changing an unplayed fixture date/time from the website and verify **Schedule!B:C** and **Schedule change history** changed while **Results recording** did not. Revert test data if using a real match.
+Use a copy of the sheet or a mutually agreed test match, not an arbitrary completed match. Verify new scores, correction, and forfeit; check that the formula in column M remains intact, that the new flag and timestamp columns exist, and that **Result change history** records both versions. Then verify the public site refreshes its standings. Also test changing an unplayed fixture date/time from the website and verify **Schedule!B:C** and **Results recording!B:C** changed to the same date/time, **Schedule change history** logged both previous values, and all recorded game scores and winners stayed unchanged. Manual edits to one tab do not automatically synchronize the other. Revert test data if using a real match.
 
 ## Important
 This is intentionally a trust-based, small community tournament. Anyone who can reach the public submission endpoint could submit or correct a result, even without a PIN. Server-side validation protects the *format* and consistency of submissions, **not the identity of the submitter**. Keep the site URL within the community where practical. The organizer can use the change-history tab to review mistakes.
