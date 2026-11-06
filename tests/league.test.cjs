@@ -47,6 +47,28 @@ test('valid scores are accepted; invalid scores and duplicate results are flagge
   assert.ok(helpers.validateResultData([{...good,scores:['11-9','10-8','11-7']}],fixtures).length);
   assert.ok(helpers.validateResultData([good,good],fixtures).some(x=>x.includes('Duplicate')));
 });
+test('rescheduled match times may differ between Schedule and Results recording',()=>{
+  const original=fixtures[0];
+  const scheduled={...original,date:'2026-11-09',time:'15:15'};
+  const recorded={
+    group:original.group,p1:original.p2,p2:original.p1,
+    date:'2026-11-03',time:'09:00',winner:original.p1,
+    forfeit:'N',scores:['9-11','8-11','7-11']
+  };
+  assert.notEqual(scheduled.date+' '+scheduled.time,recorded.date+' '+recorded.time);
+  assert.equal(helpers.pairKey(scheduled.group,scheduled.p1,scheduled.p2),
+    helpers.pairKey(recorded.group,recorded.p1,recorded.p2));
+  assert.deepEqual(helpers.validateResultData([recorded],[scheduled]),[]);
+});
+test('changing fixture time does not fail schedule integrity validation',()=>{
+  const m=fixtures[0];
+  const edited={...m,date:'2026-11-11',time:'17:30'};
+  // Check the changed fixture itself, without changing the other 104.
+  const modified=fixtures.map(x=>x===m?edited:x);
+  const old=helpers.validateScheduleData(fixtures,groups);
+  const next=helpers.validateScheduleData(modified,groups);
+  assert.deepEqual(next,old);
+});
 test('ties stay unresolved instead of being broken alphabetically',()=>{
   const a={player:'Alice',wins:3,winRate:.6,setRatio:.5,pointDiff:2};
   const b={...a,player:'Zoe'};
