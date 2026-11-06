@@ -32,6 +32,8 @@ The live website is deployed with **Cloudflare Pages** from the connected GitHub
 
 - The Cloudflare Worker reads public Google Sheets data through `/api/sheet`.
 - Participants can submit and correct scores **without login or PIN** when the Apps Script integration is configured. See [score-writing setup](integrations/README-score-write.md).
+- Players can **reschedule an unplayed match directly on the website**, after agreeing with their opponent. The form updates only the **Schedule** tab's Date and Time; no PIN or organizer approval is required. This requires deploying the updated Google Apps Script Web App version.
+- Regression tests: `node --test tests/league.test.cjs tests/reschedule.test.cjs`.
 - Apps Script is a separate Google deployment: updating `Code.gs` in GitHub does **not** deploy it to Google. The sheet owner must deploy a new Apps Script version.
 - Ranking ties that remain unresolved after all published criteria require the Sports Representative's decision; the website does not break them alphabetically.
 - Run regression checks with `node --test tests/league.test.cjs`.
