@@ -653,6 +653,9 @@ function validateScheduleData(schedule,groups){
   return errors;
 }
 function validateResultData(results,schedule){
+  // Results recording is an independent source of completed matches. Dates and
+  // times may legitimately differ from Schedule after players reschedule.
+  // Only compare the group and unordered player pair; never compare timestamps.
   const keys=new Set(schedule.map(m=>pairKey(m.group,m.p1,m.p2))),seen=new Set(),errors=[];
   for(const r of results){
     const key=pairKey(r.group,r.p1,r.p2);
@@ -755,10 +758,9 @@ async function refreshData(){
     if(loaded["Results recording"]){
       const parsed=parseResults(loaded["Results recording"]);
       const issues=validateResultData(parsed,state.schedule);
-      // Date/time differences between Schedule and Results recording are expected
-      // after rescheduling and must never block live results or standings.
-      // Even if a result has a noncritical inconsistency, keep the valid
-      // individual results available instead of blanking the entire site.
+      // This feed is independent of the Schedule feed: changed match times
+      // never invalidate results or standings. Keep the fetched results visible
+      // even if the schedule is cached or a separate integrity check warns.
       state.results=parsed;
       resultsFresh=true;
       if(issues.length)errors.push("Some result entries need review ("+issues.length+"). Live results are still displayed.");
@@ -783,6 +785,8 @@ async function refreshData(){
     }
 
     const coreOk=state.groups.length>0&&state.schedule.length>0;
+    // The status summarizes feed freshness; it is not a gate for displaying
+    // either sheet. A rescheduled fixture's date/time mismatch is irrelevant.
     const liveCore=Boolean(loaded.Groups&&loaded.Schedule&&loaded["Results recording"])&&scheduleLoaded&&resultsFresh;
     status.dataset.results=String(state.results.length);
     status.dataset.standings=String(state.standings.length);
@@ -790,7 +794,8 @@ async function refreshData(){
       status.textContent="Live updates";
       status.className="status-pill live";
     }else if(coreOk){
-      status.textContent=scheduleCached?"Schedule cached · check before playing":"Live updates limited";
+      status.textContent=scheduleCached&&resultsFresh?"Live results · schedule cached":
+        scheduleCached?"Schedule cached · check before playing":"Live updates limited";
       status.className="status-pill fallback";
     }else{
       status.textContent="Live data unavailable";
