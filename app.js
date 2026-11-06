@@ -597,7 +597,9 @@ function playerMatchCard(m,player){
     '</div><div class="player-fixture-side">'+
     (result?outcome:'<span class="match-status '+(isPast?"pending":"scheduled")+'">'+esc(status)+'</span>')+
     '<button class="mini-action" type="button" data-record-match="'+esc(scoreMatchKey(m))+'">'+
-    (result?"Correct result":"Record result")+'</button></div></article>';
+    (result?"Correct result":"Record result")+'</button>'+
+    (result?"":'<button class="mini-action" type="button" data-reschedule-match="'+esc(pairKey(m.group,m.p1,m.p2))+'">Reschedule</button>')+
+    '</div></article>';
 }
 
 function renderProgress(){
@@ -1227,7 +1229,12 @@ async function checkScoreWriteAvailability(){
   if(notice)notice.textContent=scoreWriteEnabled
     ?"Direct score recording is available. Enter your match result below."
     :"Direct score recording is awaiting organizer setup. Please use the Google Sheet link in the instructions below for now.";
+  const scheduleNotice=$("rescheduleAvailability");
+  if(scheduleNotice)scheduleNotice.textContent=scoreWriteEnabled
+    ?"Choose a match and enter the time agreed with your opponent."
+    :"Website rescheduling is awaiting the updated Google Apps Script deployment. You can still change the Schedule tab in Google Sheets below.";
   validateScoreForm();
+  validateRescheduleForm();
 }
 async function submitScoreForm(e){
   e.preventDefault();
@@ -1276,7 +1283,98 @@ function removeExpiredPromotions(){
   // Older cached HTML may still contain the removed homepage promotion.
   document.querySelectorAll(".history-panel").forEach(el=>el.remove());
 }
-function renderAll(){removeExpiredPromotions();renderHome();renderSchedule();renderResults();renderGroups();renderStandings();renderKnockout();renderNotifications();renderScoreForm()}
+let rescheduleMatches=[],rescheduleSubmitting=false;
+function selectedRescheduleMatch(){
+  const v=$("rescheduleMatch")?.value;
+  return v!==""&&v!=null?rescheduleMatches[Number(v)]:null;
+}
+function renderRescheduleForm(){
+  const select=$("rescheduleMatch");
+  if(!select)return;
+  const previous=selectedRescheduleMatch();
+  const previousKey=previous?pairKey(previous.group,previous.p1,previous.p2):"";
+  const query=sheetKey($("rescheduleSearch")?.value||"");
+  const unique=new Map();
+  state.schedule.filter(m=>m.p1&&m.p2&&!resultForMatch(m))
+    .sort((a,b)=>(a.date||"").localeCompare(b.date||"")||(a.time||"").localeCompare(b.time||""))
+    .forEach(m=>unique.set(pairKey(m.group,m.p1,m.p2),m));
+  rescheduleMatches=[...unique.values()];
+  const visible=rescheduleMatches.map((m,i)=>({m,i})).filter(({m})=>
+    !query||sheetKey(m.p1).includes(query)||sheetKey(m.p2).includes(query)||
+    sheetKey("group "+m.group).includes(query));
+  select.innerHTML='<option value="">'+(visible.length?"Choose a match…":"No unplayed matches found")+'</option>'+
+    visible.map(({m,i})=>'<option value="'+i+'">'+esc("Group "+m.group+" · "+m.p1+" vs "+m.p2)+'</option>').join("");
+  const keep=visible.find(({m})=>pairKey(m.group,m.p1,m.p2)===previousKey);
+  if(keep)select.value=String(keep.i);
+  showRescheduleMatch();
+}
+function showRescheduleMatch(){
+  const m=selectedRescheduleMatch();
+  const label=$("rescheduleCurrent");
+  if(label)label.textContent=m?m.p1+" vs "+m.p2+" · Currently "+fmtDate(m.date)+" at "+m.time+" Prague time":
+    "Select an unplayed match to see its current date and time.";
+  if($("rescheduleDate"))$("rescheduleDate").value=m?.date||"";
+  if($("rescheduleTime"))$("rescheduleTime").value=m?.time||"";
+  validateRescheduleForm();
+}
+function validateRescheduleForm(){
+  const m=selectedRescheduleMatch(),date=$("rescheduleDate")?.value||"",
+    time=$("rescheduleTime")?.value||"";
+  const changed=Boolean(m&&(date!==m.date||time!==m.time));
+  const valid=changed&&/^20\d{2}-\d{2}-\d{2}$/.test(date)&&
+    date>="2026-11-01"&&date<="2027-06-30"&&
+    /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
+  if($("rescheduleSubmit"))$("rescheduleSubmit").disabled=!scoreWriteEnabled||rescheduleSubmitting||!valid;
+}
+function openRescheduleMatch(key){
+  if($("rescheduleSearch"))$("rescheduleSearch").value="";
+  renderRescheduleForm();
+  const index=rescheduleMatches.findIndex(m=>pairKey(m.group,m.p1,m.p2)===key);
+  if(index<0)return;
+  $("rescheduleMatch").value=String(index);
+  showRescheduleMatch();
+  if($("rescheduleFeedback"))$("rescheduleFeedback").textContent="";
+  openView("change-schedule");
+}
+async function submitRescheduleForm(event){
+  event.preventDefault();
+  if(rescheduleSubmitting||!scoreWriteEnabled)return;
+  const m=selectedRescheduleMatch();
+  if(!m||resultForMatch(m))return;
+  const date=$("rescheduleDate").value,time=$("rescheduleTime").value;
+  if(date===m.date&&time===m.time){
+    $("rescheduleFeedback").textContent="Choose a different date or time.";
+    return;
+  }
+  if(!/^20\d{2}-\d{2}-\d{2}$/.test(date)||date<"2026-11-01"||date>"2027-06-30"||
+     !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)){
+    $("rescheduleFeedback").textContent="Enter a valid date and time.";
+    return;
+  }
+  if(!window.confirm("Have both players agreed to this new time?\n\n"+
+    m.p1+" vs "+m.p2+"\nCurrent: "+m.date+" "+m.time+
+    "\nNew: "+date+" "+time+" (Prague time)\n\nSave the new time to Google Sheets?"))return;
+  rescheduleSubmitting=true;
+  validateRescheduleForm();
+  $("rescheduleFeedback").textContent="Saving the new time to Google Sheets…";
+  try{
+    const response=await fetch("/api/reschedule",{
+      method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({group:m.group,p1:m.p1,p2:m.p2,date,time})
+    });
+    const result=await response.json();
+    if(!response.ok||!result.ok)throw Error(result.error||"Could not save the new time.");
+    await refreshData();
+    openView("change-schedule");
+    $("rescheduleFeedback").textContent="Saved! "+m.p1+" vs "+m.p2+
+      " is now scheduled for "+date+" at "+time+" Prague time."+
+      (result.auditLogged===false?" "+(result.auditWarning||"Change history could not be saved."):"");
+  }catch(err){
+    $("rescheduleFeedback").textContent=String(err.message||err)+
+      " Check the Google Sheet before submitting again.";
+  }finally{rescheduleSubmitting=false;validateRescheduleForm()}
+}
+function renderAll(){removeExpiredPromotions();renderHome();renderSchedule();renderResults();renderGroups();renderStandings();renderKnockout();renderNotifications();renderScoreForm();renderRescheduleForm()}
 removeExpiredPromotions();
 
 document.querySelectorAll(".tab,[data-view='record-score'],[data-view='change-schedule'],[data-view='results']").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
@@ -1312,6 +1410,8 @@ $("myMatches").addEventListener("click",e=>{
     renderMyMatches();
     return;
   }
+  const reschedule=e.target.closest("[data-reschedule-match]");
+  if(reschedule){openRescheduleMatch(reschedule.dataset.rescheduleMatch);return}
   const btn=e.target.closest("[data-record-match]");
   if(!btn)return;
   if($("scoreMatchSearch"))$("scoreMatchSearch").value="";
@@ -1345,6 +1445,11 @@ $("scoreMatchSelect")?.addEventListener("change",()=>{
 $("scoreGames")?.addEventListener("input",()=>{$("scoreEntryFeedback").textContent="";validateScoreForm()});
 $("scoreResultType")?.addEventListener("change",()=>{$("scoreEntryFeedback").textContent="";updateScoreEntryType()});
 $("scoreForfeitWinner")?.addEventListener("change",()=>{$("scoreEntryFeedback").textContent="";validateScoreForm()});
+$("rescheduleSearch")?.addEventListener("input",renderRescheduleForm);
+$("rescheduleMatch")?.addEventListener("change",showRescheduleMatch);
+$("rescheduleDate")?.addEventListener("input",validateRescheduleForm);
+$("rescheduleTime")?.addEventListener("input",validateRescheduleForm);
+$("rescheduleForm")?.addEventListener("submit",submitRescheduleForm);
 $("scoreEntryForm")?.addEventListener("submit",submitScoreForm);
 checkScoreWriteAvailability();
 renderAll(); // Display the fallback immediately, even on slow or offline connections.
