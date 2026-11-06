@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="CERGE-EI Ping Pong League 2026 tournament hub: schedule, standings, groups, results and rules.">
   <title>CERGE-EI Ping Pong League 2026</title>
-  <link rel="stylesheet" href="styles.css?v=20261106-reschedule-v1">
+  <link rel="stylesheet" href="styles.css?v=20261106-player-copy-v2">
 </head>
 <body>
 <a class="skip-link" href="#mainContent">Skip to tournament content</a>
@@ -245,7 +245,7 @@
   <section id="results" class="view">
     <section class="panel">
       <div class="section-heading">
-        <div><h2>Recorded results</h2><p>Explore completed matches and game-by-game scores from Google Sheets. Latest recorded updates appear first when a timestamp is available.</p></div>
+        <div><h2>Recorded results</h2><p>Explore completed matches and game-by-game scores. Most recently recorded results appear first.</p></div>
       </div>
       <div class="filters">
         <input id="resultsSearch" class="search" type="search" aria-label="Search recorded results by player" placeholder="Search a player…">
@@ -381,9 +381,9 @@
   
   <section id="change-schedule" class="view" aria-labelledby="scheduleGuideTitle">
     <section class="panel reschedule-shell" aria-labelledby="rescheduleTitle">
-      <span class="section-label">FOR PLAYERS · SELF-SERVICE</span>
+      <span class="section-label">MATCH SCHEDULING</span>
       <h2 id="rescheduleTitle">Reschedule a match</h2>
-      <p>Already agreed on a new time with your opponent? Update your match directly here. No login, PIN, or organizer approval is needed.</p>
+      <p>Agreed on a new time with your opponent? Update your match here.</p>
       <p id="rescheduleAvailability" class="score-entry-notice" role="status">Checking schedule editing availability…</p>
       <form id="rescheduleForm" class="score-entry-form" autocomplete="off">
         <label for="rescheduleSearch">1. Find your match</label>
@@ -395,16 +395,17 @@
         <input id="rescheduleDate" type="date" min="2026-11-01" max="2027-06-30" required>
         <label for="rescheduleTime">3. New agreed time (Prague time)</label>
         <input id="rescheduleTime" type="time" step="60" required>
-        <p class="score-entry-hint">Please confirm the new appointment with your opponent before saving. This updates the date and time in <strong>both Schedule and Results recording</strong> so they stay consistent. Game scores and winners are not changed.</p>
+        <p class="score-entry-hint">Please agree on the new date and time with your opponent before saving.</p>
         <button id="rescheduleSubmit" class="btn primary score-entry-submit" type="submit" disabled>Save new match time</button>
         <p id="rescheduleFeedback" class="score-entry-feedback" role="status" aria-live="polite"></p>
       </form>
     </section>
 
     <section class="panel score-guide schedule-guide">
-      <span class="section-label">FOR PLAYERS · QUICK GUIDE</span>
-      <h2 id="scheduleGuideTitle">Manual fallback: change your match time in Google Sheets</h2>
-      <p class="score-lead">You can use the form above instead of editing Google Sheets directly. The manual instructions below remain available as a fallback. Our league is meant to be <strong>friendly and flexible</strong>, not an extra source of pressure. Classes, work, research, and personal responsibilities come first. The dates on the website are simply a starting point to help everyone organize their matches.</p>
+      <details class="score-manual-help"><summary>Prefer Google Sheets? View instructions</summary>
+      <span class="section-label">MATCH GUIDANCE</span>
+      <h2 id="scheduleGuideTitle">Change your match time in Google Sheets</h2>
+      <p class="score-lead">Our league is meant to be <strong>friendly and flexible</strong>. Classes, work, research, and personal responsibilities come first. Match times can be changed by mutual agreement.</p>
 
       <div class="schedule-kindness" role="note">
         <strong>Be patient with each other. 💙</strong>
@@ -424,7 +425,7 @@
           <span class="score-step-number" aria-hidden="true">2</span>
           <div>
             <h3>Open the Google Sheet</h3>
-            <p>Use the button at the bottom of this page. In the Sheet, first choose the <strong>Schedule</strong> tab. You will also need to update the matching row in <strong>Results recording</strong> if editing manually.</p>
+            <p>Use the button at the bottom of this page. In the Sheet, first choose the <strong>Schedule</strong> tab. Update the matching row in <strong>Results recording</strong> as well.</p>
           </div>
         </article>
         <article class="score-step">
@@ -459,14 +460,14 @@
               <div><small>Time · Column C</small><strong>16:00</strong></div>
             </div>
           </div>
-          <p>Alex and Sam have <strong>both agreed</strong> to play on 5 November at 16:00. They edit the <strong>Date</strong> and <strong>Time</strong> cells in both the Schedule and Results recording rows, leaving everything else unchanged.</p>
+          <p>Alex and Sam have <strong>both agreed</strong> to play on 5 November at 16:00. They update the date and time for their match.</p>
         </div>
 
         <article class="score-step">
           <span class="score-step-number" aria-hidden="true">5</span>
           <div>
             <h3>You're done — check the website!</h3>
-            <p>Google Sheets saves your edits automatically. The tournament website reads the updated Schedule sheet, so the new appointment should appear there too. Return to <strong>Schedule</strong> on the website and refresh the page to see the change.</p>
+            <p>Changes are saved automatically. Return to <strong>Schedule</strong> on the website and refresh to see the new time.</p>
             <p>If the change doesn't appear or you accidentally edited the wrong row, please let the Sports Representative know so we can help.</p>
           </div>
         </article>
@@ -475,7 +476,7 @@
       <div class="score-sheet-cta">
         <div>
           <strong>Agreed on a new time?</strong>
-          <p>Open the shared Google Sheet and update the date and time in both “Schedule” and “Results recording” for your match. Using the website form above does this automatically.</p>
+          <p>Open the shared Google Sheet and update the date and time in both “Schedule” and “Results recording” for your match. </p>
         </div>
         <a class="score-sheet-button" href="https://docs.google.com/spreadsheets/d/1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Open Google Sheet to change schedule <span aria-hidden="true">↗</span></a>
       </div>
@@ -485,14 +486,15 @@
         <p><strong>Can't agree on a time?</strong> It's okay to take a little longer. Please keep communicating kindly, and ask the Sports Representative for help if needed.</p>
         <p><strong>Remember:</strong> Only edit your own match's date and time in both tabs, after both players agree. Don't delete or move rows or change scores.</p>
       </div>
+      </details>
     </section>
   </section>
 
   <section id="record-score" class="view" aria-labelledby="scoreGuideTitle">
     <section class="panel score-guide">
-      <span class="section-label">FOR PLAYERS · QUICK GUIDE</span>
+      <span class="section-label">MATCH GUIDANCE</span>
       <h2 id="scoreGuideTitle">Record your match result</h2>
-      <p class="score-lead">Choose your match and enter the game scores or a forfeit winner. You can correct an existing result yourself by submitting it again. No login or PIN is required.</p>
+      <p class="score-lead">Choose your match and enter the game scores or a forfeit winner. To correct a result, select the same match and submit the corrected score.</p>
       <div class="score-entry-shell">
         <div id="scoreEntryAvailability" class="score-entry-notice" role="status">Checking score submission availability…</div>
         <form id="scoreEntryForm" class="score-entry-form" autocomplete="off">
@@ -517,7 +519,7 @@
             <p class="score-entry-hint">A forfeit counts as one win and one loss, but awards no games or points. Do not invent scores.</p>
           </div>
           <p id="scoreLiveWinner" class="score-entry-winner" aria-live="polite">Enter scores to calculate the winner.</p>
-          <button id="scoreSubmitBtn" class="score-sheet-button score-entry-submit" type="submit" disabled>Submit result to Google Sheets</button>
+          <button id="scoreSubmitBtn" class="score-sheet-button score-entry-submit" type="submit" disabled>Save result</button>
           <p id="scoreEntryFeedback" class="score-entry-feedback" role="status" aria-live="polite"></p>
         </form>
       </div>
@@ -576,7 +578,7 @@
           <span class="score-step-number" aria-hidden="true">5</span>
           <div>
             <h3>That's it — you're done!</h3>
-            <p>Google Sheets saves your changes automatically. You can return to the tournament website and refresh to check the latest results and standings.</p>
+            <p>Your changes are saved automatically. Return to the tournament website and refresh to check the latest results and standings.</p>
           </div>
         </article>
       </div>
@@ -609,7 +611,7 @@
   <p>CERGE-EI Ping Pong League 2026 · Made for the CERGE-EI community in Prague</p>
 </footer>
 
-<script src="app.js?v=20261106-reschedule-v1"></script>
+<script src="app.js?v=20261106-player-copy-v2"></script>
   <!-- Cloudflare Web Analytics --><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"cf4b67f5c23d4509a9bf91c446bc2d6f"}'></script><!-- End Cloudflare Web Analytics -->
   <!-- deploy-refresh: 2026-11-02T17:20+01:00 -->
 </body>
