@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="CERGE-EI Ping Pong League 2026 tournament hub: schedule, standings, groups, results and rules.">
   <title>CERGE-EI Ping Pong League 2026</title>
-  <link rel="stylesheet" href="styles.css?v=20261105-league-improvements-v3">
+  <link rel="stylesheet" href="styles.css?v=20261106-reschedule-v1">
 </head>
 <body>
 <a class="skip-link" href="#mainContent">Skip to tournament content</a>
@@ -219,7 +219,7 @@
   <section id="schedule" class="view">
     <section class="panel">
       <div class="section-heading">
-        <div><h2>Group-stage schedule</h2><p>Pre-scheduled default times, shown in Prague time. Players may reschedule by mutual agreement.</p></div>
+        <div><h2>Group-stage schedule</h2><p>Pre-scheduled default times, shown in Prague time. Players may reschedule by mutual agreement.</p><button type="button" class="mini-action" data-view="change-schedule">Reschedule a match on this website</button></div>
       </div>
       <p id="scheduleSourceNotice" class="data-source-warning" role="status" hidden></p>
       <p class="schedule-priority-line">Default times are there to make scheduling easy — if you cannot make yours, study and work come first, so please contact your opponent and arrange a new time.</p>
@@ -380,10 +380,31 @@
 
   
   <section id="change-schedule" class="view" aria-labelledby="scheduleGuideTitle">
+    <section class="panel reschedule-shell" aria-labelledby="rescheduleTitle">
+      <span class="section-label">FOR PLAYERS · SELF-SERVICE</span>
+      <h2 id="rescheduleTitle">Reschedule a match</h2>
+      <p>Already agreed on a new time with your opponent? Update your match directly here. No login, PIN, or organizer approval is needed.</p>
+      <p id="rescheduleAvailability" class="score-entry-notice" role="status">Checking schedule editing availability…</p>
+      <form id="rescheduleForm" class="score-entry-form" autocomplete="off">
+        <label for="rescheduleSearch">1. Find your match</label>
+        <input id="rescheduleSearch" class="search" type="search" placeholder="Search player name or group…" autocomplete="off">
+        <label for="rescheduleMatch">Choose the match</label>
+        <select id="rescheduleMatch" required><option value="">Choose your match…</option></select>
+        <p id="rescheduleCurrent" class="score-entry-names" aria-live="polite">Select a match to see its current date and time.</p>
+        <label for="rescheduleDate">2. New agreed date</label>
+        <input id="rescheduleDate" type="date" min="2026-11-01" max="2027-06-30" required>
+        <label for="rescheduleTime">3. New agreed time (Prague time)</label>
+        <input id="rescheduleTime" type="time" step="60" required>
+        <p class="score-entry-hint">Please confirm the new appointment with your opponent before saving. This changes only the date and time in the <strong>Schedule</strong> tab; it does not alter match results.</p>
+        <button id="rescheduleSubmit" class="btn primary score-entry-submit" type="submit" disabled>Save new match time</button>
+        <p id="rescheduleFeedback" class="score-entry-feedback" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
     <section class="panel score-guide schedule-guide">
       <span class="section-label">FOR PLAYERS · QUICK GUIDE</span>
-      <h2 id="scheduleGuideTitle">How to change your match time</h2>
-      <p class="score-lead">Our league is meant to be <strong>friendly and flexible</strong>, not an extra source of pressure. Classes, work, research, and personal responsibilities come first. The dates on the website are simply a starting point to help everyone organize their matches.</p>
+      <h2 id="scheduleGuideTitle">How to change your match time in Google Sheets</h2>
+      <p class="score-lead">You can use the form above instead of editing Google Sheets directly. The manual instructions below remain available as a fallback. Our league is meant to be <strong>friendly and flexible</strong>, not an extra source of pressure. Classes, work, research, and personal responsibilities come first. The dates on the website are simply a starting point to help everyone organize their matches.</p>
 
       <div class="schedule-kindness" role="note">
         <strong>Be patient with each other. 💙</strong>
@@ -588,7 +609,7 @@
   <p>CERGE-EI Ping Pong League 2026 · Made for the CERGE-EI community in Prague</p>
 </footer>
 
-<script src="app.js?v=20261105-league-improvements-v3"></script>
+<script src="app.js?v=20261106-reschedule-v1"></script>
   <!-- Cloudflare Web Analytics --><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"cf4b67f5c23d4509a9bf91c446bc2d6f"}'></script><!-- End Cloudflare Web Analytics -->
   <!-- deploy-refresh: 2026-11-02T17:20+01:00 -->
 </body>
