@@ -36,6 +36,52 @@ function validateScores_(scores) {
 function ensureColumn_(sheet,col) {
   if(col>sheet.getMaxColumns())sheet.insertColumnsAfter(sheet.getMaxColumns(),col-sheet.getMaxColumns());
 }
+// Rescheduling changes only Schedule!B:C; it never edits Results recording.
+function reschedule_(body,ss) {
+  const group=String(body.group||'').trim().toUpperCase();
+  const p1=String(body.p1||'').trim(),p2=String(body.p2||'').trim();
+  const date=String(body.date||'').trim(),time=String(body.time||'').trim();
+  if(!/^[A-G]$/.test(group)||!p1||!p2||normalized_(p1)===normalized_(p2))
+    throw Error('Choose a valid match.');
+  if(!/^20\d{2}-\d{2}-\d{2}$/.test(date))throw Error('Use a valid YYYY-MM-DD date.');
+  const [year,month,day]=date.split('-').map(Number);
+  const d=new Date(year,month-1,day,12);
+  if(d.getFullYear()!==year||d.getMonth()!==month-1||d.getDate()!==day||
+     date<'2026-11-01'||date>'2027-06-30')throw Error('Date must be within the tournament season.');
+  if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(time))throw Error('Use a valid 24-hour time (HH:MM).');
+  const sheet=ss.getSheetByName('Schedule');
+  if(!sheet)throw Error('Schedule tab not found.');
+  const rows=sheet.getDataRange().getDisplayValues();
+  const pair=[normalized_(p1),normalized_(p2)].sort().join('|');
+  let found=-1;
+  for(let i=0;i<rows.length;i++){
+    const row=rows[i];
+    if(normalized_(row[3])===normalized_(group) &&
+       [normalized_(row[4]),normalized_(row[5])].sort().join('|')===pair){
+      if(found>=0)throw Error('Duplicate Schedule rows for this match; contact the organizer.');
+      found=i;
+    }
+  }
+  if(found<0)throw Error('Match not found in Schedule. Refresh the website and try again.');
+  const previousDate=String(rows[found][1]||''),previousTime=String(rows[found][2]||'');
+  sheet.getRange(found+1,2).setValue(d).setNumberFormat('yyyy-mm-dd');
+  sheet.getRange(found+1,3).setValue(time);
+  SpreadsheetApp.flush();
+  let auditLogged=true,auditWarning='';
+  try{
+    let audit=ss.getSheetByName('Schedule change history');
+    if(!audit){
+      audit=ss.insertSheet('Schedule change history');
+      audit.appendRow(['Timestamp','Group','Player 1','Player 2','Previous date','Previous time','New date','New time']);
+    }
+    audit.appendRow([new Date(),group,p1,p2,previousDate,previousTime,date,time]);
+  }catch(err){
+    auditLogged=false;
+    auditWarning='Schedule saved, but change history could not be recorded: '+String(err.message||err);
+  }
+  return {ok:true,date,time,previousDate,previousTime,auditLogged,auditWarning};
+}
+
 function doPost(e) {
   const lock=LockService.getScriptLock();
   try {
@@ -43,6 +89,12 @@ function doPost(e) {
     const body=JSON.parse(e.postData.contents || '{}');
     const expected=PropertiesService.getScriptProperties().getProperty('SCORE_WRITE_SECRET');
     if (!expected || body.secret!==expected) throw Error('Submission not authorized.');
+    if(body.action==='reschedule'){
+      const ss=SpreadsheetApp.getActiveSpreadsheet();
+      if(!ss||ss.getId()!=='1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI')
+        throw Error('This script must be bound to the tournament spreadsheet.');
+      return respond_(reschedule_(body,ss));
+    }
     if(!/^[A-G]$/.test(String(body.group||'')))throw Error('Invalid group.');
     const p1=String(body.p1||'').trim(),p2=String(body.p2||'').trim();
     if(!p1 || !p2 || normalized_(p1)===normalized_(p2)) throw Error('Invalid players.');
