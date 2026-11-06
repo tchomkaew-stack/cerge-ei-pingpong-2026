@@ -101,7 +101,7 @@ const FALLBACK_SCHEDULE=`1|2026-11-03|14:30|C|Marek Kapička|Michael Schulz
 4|2026-11-25|13:00|E|Filip Pertold|Gayane Baghumyan
 4|2026-11-25|16:00|F|Filip Matejka|Tomáš Konečný
 4|2026-11-25|17:00|A|Jakub Šichta|Nazar Rudyi
-5|2026-11-30|09:00|C|Marek Kapička|Michael Schulz
+5|2026-11-30|09:00|C|Marek Kapička|Caner Kilic
 5|2026-11-30|10:00|E|Shafin Shabir|Tomas Haufer
 5|2026-11-30|11:00|C|František Ježek|Caner Kilic
 5|2026-11-30|12:00|E|Filip Pertold|Yaroslav Korobka
@@ -125,6 +125,15 @@ const FALLBACK_SCHEDULE=`1|2026-11-03|14:30|C|Marek Kapička|Michael Schulz
   const [week,date,time,group,p1,p2]=line.split("|");
   return {week:Number(week),date,time,group,p1,p2};
 });
+
+// Keep the tournament usable while Google Sheets is temporarily unreachable.
+// The fallback is overwritten by live data as soon as the API responds.
+const FALLBACK_GROUPS=[...new Map(FALLBACK_SCHEDULE.flatMap(m=>[
+  [m.group+"|"+m.p1,{group:m.group,player:m.p1,role:""}],
+  [m.group+"|"+m.p2,{group:m.group,player:m.p2,role:""}]
+])).values()];
+state.groups=FALLBACK_GROUPS;
+state.schedule=[...FALLBACK_SCHEDULE];
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -1333,4 +1342,5 @@ $("scoreResultType")?.addEventListener("change",()=>{$("scoreEntryFeedback").tex
 $("scoreForfeitWinner")?.addEventListener("change",()=>{$("scoreEntryFeedback").textContent="";validateScoreForm()});
 $("scoreEntryForm")?.addEventListener("submit",submitScoreForm);
 checkScoreWriteAvailability();
+renderAll(); // Display the fallback immediately, even on slow or offline connections.
 refreshData();
