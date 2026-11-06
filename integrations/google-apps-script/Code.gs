@@ -1,6 +1,7 @@
 /**
  * @OnlyCurrentDoc
- * CERGE-EI Ping Pong League 2026: simple participant score recording bridge.\n * Players do not need an account or PIN. The shared secret is server-side only.
+ * CERGE-EI Ping Pong League 2026: participant score and schedule editing bridge.
+ * Players do not need an account or PIN. The shared secret is server-side only.
  * Deploy as a Google Apps Script Web App, executing as the Sheet owner.
  * Set Script Property SCORE_WRITE_SECRET to exactly the same random secret
  * as Cloudflare Pages' SCORE_WRITE_SECRET secret variable.
