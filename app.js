@@ -721,7 +721,7 @@ async function refreshData(){
   refreshInFlight=(async()=>{
     const status=$("liveStatus"),errBox=$("liveError"),checked=$("lastUpdated"),refreshBtn=$("refreshBtn");
     if(refreshBtn)refreshBtn.disabled=true;
-    status.textContent="Checking Google Sheets…";
+    status.textContent="Checking for updates…";
     status.className="status-pill";
     if(errBox){errBox.style.display="none";errBox.textContent=""}
 
@@ -793,23 +793,23 @@ async function refreshData(){
     status.dataset.results=String(state.results.length);
     status.dataset.standings=String(state.standings.length);
     if(coreOk&&liveCore&&errors.length===0){
-      status.textContent="Live updates";
+      status.textContent="Up to date";
       status.className="status-pill live";
     }else if(coreOk){
-      status.textContent=scheduleCached&&resultsFresh?"Live results · schedule cached":
-        scheduleCached?"Schedule cached · check before playing":"Live updates limited";
+      status.textContent="Updates delayed";
       status.className="status-pill fallback";
     }else{
-      status.textContent="Live data unavailable";
+      status.textContent="Updates unavailable";
       status.className="status-pill fallback";
     }
     const warning=[
-      ...(scheduleCached?["The latest schedule could not be confirmed. Dates may have changed — use the Google Sheet or Refresh before playing."]:[]),
-      ...errors.filter(e=>!scheduleCached||!e.startsWith("Schedule:"))
+      ...(scheduleCached?["Match times may have changed. Please check with your opponent before playing."]:[]),
+      ...(errors.length?["Some information may be out of date. Please try refreshing."]:[])
     ];
+    if(errors.length)console.warn("Tournament data diagnostics:",errors);
     if(errBox&&warning.length){
       errBox.style.display="block";
-      errBox.textContent=warning.join(" | ");
+      errBox.textContent=[...new Set(warning)].join(" ");
     }
     const now=new Date();
     lastRefreshAt=Date.now();
@@ -817,9 +817,7 @@ async function refreshData(){
       const time=new Intl.DateTimeFormat("en-GB",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Prague"}).format(now);
       checked.textContent="Checked "+time+" Prague time"+(liveCore?"":" · some data may be older");
     }
-    status.title=liveCore
-      ?"Groups "+state.groups.length+" · Schedule "+state.schedule.length+" · Results "+state.results.length+" · Standings "+state.standings.length
-      :warning.join("\n");
+    status.title=liveCore?"Latest tournament updates available.":"Some updates may be delayed.";
     renderAll();
     if(refreshBtn)refreshBtn.disabled=false;
   })();
@@ -975,7 +973,7 @@ function renderResults(){
   const notice=$("resultsSourceNotice");
   if(notice){
     notice.hidden=dataFreshness.results;
-    notice.textContent=dataFreshness.results?"":"Results could not be confirmed from Google Sheets. Displayed results may be incomplete or older.";
+    notice.textContent=dataFreshness.results?"":"Some results may be out of date. Please try refreshing.";
   }
   if(!list)return;
   const q=sheetKey($("resultsSearch")?.value||"");
@@ -1001,7 +999,7 @@ function renderSchedule(){
   const notice=$("scheduleSourceNotice");
   if(notice){
     notice.hidden=dataFreshness.schedule;
-    notice.textContent=dataFreshness.schedule?"":"The schedule has not passed every integrity check or could not be confirmed. Please verify questionable fixtures in Google Sheets.";
+    notice.textContent=dataFreshness.schedule?"":"Match times may have changed. Please confirm with your opponent before playing.";
   }
   const q=sheetKey($("scheduleSearch").value),g=$("groupFilter").value,w=$("weekFilter").value;
   const matches=state.schedule.filter(m=>(!g||m.group===g)&&(!w||String(m.week)===w)&&
@@ -1041,7 +1039,7 @@ function renderStandings(){
   const notice=$("standingsSourceNotice");
   if(notice){
     notice.hidden=dataFreshness.standings;
-    notice.textContent=dataFreshness.standings?"":"Live standings could not be confirmed. Rankings may be incomplete or older.";
+    notice.textContent=dataFreshness.standings?"":"Standings may be out of date. Please try refreshing.";
   }
   const el=$("standingsGrid");
   if(!state.standings.length){
@@ -1231,14 +1229,27 @@ async function checkScoreWriteAvailability(){
   }catch{scoreWriteEnabled=false}
   const notice=$("scoreEntryAvailability");
   if(notice)notice.textContent=scoreWriteEnabled
-    ?"Direct score recording is available. Enter your match result below."
-    :"Direct score recording is awaiting organizer setup. Please use the Google Sheet link in the instructions below for now.";
+    ?"Enter your match result below."
+    :"Score entry is temporarily unavailable here. Please try again later or use the Google Sheet link below.";
   const scheduleNotice=$("rescheduleAvailability");
   if(scheduleNotice)scheduleNotice.textContent=scoreWriteEnabled
     ?"Choose a match and enter the time agreed with your opponent."
-    :"Website rescheduling is awaiting the updated Google Apps Script deployment. You can still change the Schedule tab in Google Sheets below.";
+     :"Rescheduling is temporarily unavailable here. Please try again later or use the Google Sheet instructions below.";
   validateScoreForm();
   validateRescheduleForm();
+}
+function playerSubmissionError(message,kind){
+  const value=String(message||"");
+  if(/invalid (game|score)|won by two points|three games|game score|completed match/i.test(value))
+    return "Please check the game scores and try again.";
+  if(/invalid date|invalid time|YYYY-MM-DD|24-hour|tournament season/i.test(value))
+    return "Please check the new date and time.";
+  if(/match not found|duplicate match rows|duplicate schedule|result sheet columns/i.test(value))
+    return "We couldn't find that match. Please refresh the page or contact the Sports Representative.";
+  if(/submission not authorized|script|deployment|secret|endpoint|configured|not connected|invalid origin/i.test(value))
+    return "This feature is temporarily unavailable. Please try again later.";
+  return kind==="score"?"Could not save the result. Please try again or contact the Sports Representative.":
+    "Could not save the new time. Please try again or contact the Sports Representative.";
 }
 async function submitScoreForm(e){
   e.preventDefault();
@@ -1265,7 +1276,7 @@ async function submitScoreForm(e){
     match.p1+" vs "+match.p2+"\n"+summary+
     (existing?"\n\nThe previous result will be overwritten.":"")))return;
   scoreSubmitting=true;validateScoreForm();
-  $("scoreEntryFeedback").textContent="Saving to Google Sheets…";
+  $("scoreEntryFeedback").textContent="Saving your result…";
   try{
     const r=await fetch("/api/submit-score",{
       method:"POST",headers:{"content-type":"application/json"},
@@ -1278,8 +1289,8 @@ async function submitScoreForm(e){
     openView("record-score");
     $("scoreEntryFeedback").textContent="Saved! "+data.winner+
       (data.forfeit?" won by forfeit.":" won "+data.setScore+".")+
-      " The result and standings have been refreshed from Google Sheets."+(data.auditLogged===false?" WARNING: "+(data.auditWarning||"Change history could not be recorded."):"");
-  }catch(err){$("scoreEntryFeedback").textContent=err.message+" If you're unsure whether it saved, check the Google Sheet before trying again."}
+      " Your result has been recorded.";
+  }catch(err){console.warn("Score submission failed:",err);$("scoreEntryFeedback").textContent=playerSubmissionError(err.message,"score")}
   finally{scoreSubmitting=false;validateScoreForm()}
 }
 
@@ -1357,10 +1368,10 @@ async function submitRescheduleForm(event){
   }
   if(!window.confirm("Have both players agreed to this new time?\n\n"+
     m.p1+" vs "+m.p2+"\nCurrent: "+m.date+" "+m.time+
-    "\nNew: "+date+" "+time+" (Prague time)\n\nSave the new time to Google Sheets?"))return;
+    "\nNew: "+date+" "+time+" (Prague time)\n\nSave this new time?"))return;
   rescheduleSubmitting=true;
   validateRescheduleForm();
-  $("rescheduleFeedback").textContent="Saving the new time to Google Sheets…";
+  $("rescheduleFeedback").textContent="Saving the new match time…";
   try{
     const response=await fetch("/api/reschedule",{
       method:"POST",headers:{"content-type":"application/json"},
@@ -1371,11 +1382,10 @@ async function submitRescheduleForm(event){
     await refreshData();
     openView("change-schedule");
     $("rescheduleFeedback").textContent="Saved! "+m.p1+" vs "+m.p2+
-      " is now scheduled for "+date+" at "+time+" Prague time."+
-      (result.auditLogged===false?" "+(result.auditWarning||"Change history could not be saved."):"");
+      " is now scheduled for "+date+" at "+time+" Prague time.";
   }catch(err){
-    $("rescheduleFeedback").textContent=String(err.message||err)+
-      " Check the Google Sheet before submitting again.";
+    console.warn("Reschedule submission failed:",err);
+    $("rescheduleFeedback").textContent=playerSubmissionError(err.message,"reschedule");
   }finally{rescheduleSubmitting=false;validateRescheduleForm()}
 }
 function renderAll(){removeExpiredPromotions();renderHome();renderSchedule();renderResults();renderGroups();renderStandings();renderKnockout();renderNotifications();renderScoreForm();renderRescheduleForm()}
