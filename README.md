@@ -36,4 +36,10 @@ The live website is deployed with **Cloudflare Pages** from the connected GitHub
 - Ranking ties that remain unresolved after all published criteria require the Sports Representative's decision; the website does not break them alphabetically.
 - Run regression checks with `node --test tests/league.test.cjs`.
 
-**Data-integrity note:** The built-in fallback schedule currently contains a duplicated Group C pairing (Marek Kapička vs Michael Schulz) and omits Caner Kilic vs Marek Kapička. Confirm and correct the authoritative Google Sheet if it has the same issue; do not assume the fallback is authoritative.
+## Rescheduling and independent data feeds
+- **Schedule** controls planned fixture dates and times.
+- **Results recording** controls completed matches, winners, game scores, and results displayed on the website.
+- Players can reschedule by mutual agreement. Dates and times in these two tabs **do not need to match**; differences never block either sheet from loading.
+- Matches are matched by group and the two player names, regardless of player order, not by their date or time.
+- Standings are derived from recorded results. A temporary issue with one feed must not hide successfully fetched data from the other.
+- The corrected fallback schedule contains 105 unique group-stage fixtures. It is used only when the live Schedule feed cannot be read.
