@@ -1496,3 +1496,20 @@ footer{line-height:1.5}
   .mobile-schedule-bottom{align-items:flex-start}
 }
 @media(prefers-reduced-motion:reduce){.skip-link{transition:none}}
+
+/* Website rescheduling form */
+.reschedule-shell{margin-bottom:20px}
+.reschedule-shell>p{line-height:1.55;color:var(--muted)}
+.reschedule-shell .score-entry-form{max-width:700px}
+.reschedule-shell .score-entry-form input,
+.reschedule-shell .score-entry-form select{
+  width:100%;min-height:45px;padding:10px 12px;border:1px solid #cbd7e4;
+  border-radius:10px;background:#fff;color:var(--ink);font:inherit
+}
+.reschedule-shell .score-entry-form input:focus-visible,
+.reschedule-shell .score-entry-form select:focus-visible{
+  outline:2px solid var(--crimson);outline-offset:2px
+}
+.reschedule-shell .score-entry-feedback{min-height:1.5em}
+.schedule-reschedule{display:inline-block;margin-top:8px;font-size:.77rem}
+.mobile-schedule-card .schedule-reschedule{margin-top:10px}
