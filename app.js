@@ -746,8 +746,13 @@ async function refreshData(){
     if(loaded["Results recording"]){
       const parsed=parseResults(loaded["Results recording"]);
       const issues=validateResultData(parsed,state.schedule);
-      if(!issues.length){state.results=parsed;resultsFresh=true}
-      else errors.push("Results: "+issues.slice(0,3).join(" ")+" Keeping previous data.");
+      // Date/time differences between Schedule and Results recording are expected
+      // after rescheduling and must never block live results or standings.
+      // Even if a result has a noncritical inconsistency, keep the valid
+      // individual results available instead of blanking the entire site.
+      state.results=parsed;
+      resultsFresh=true;
+      if(issues.length)errors.push("Some result entries need review ("+issues.length+"). Live results are still displayed.");
     }
     if(loaded.Knockout)state.knockout=parseKnockout(loaded.Knockout);
     const sheetStandings=loaded.Standing?parseStandings(loaded.Standing):[];
@@ -769,7 +774,7 @@ async function refreshData(){
     }
 
     const coreOk=state.groups.length>0&&state.schedule.length>0;
-    const liveCore=core.every(name=>Boolean(loaded[name]))&&scheduleFresh&&resultsFresh;
+    const liveCore=Boolean(loaded.Groups&&loaded.Schedule&&loaded["Results recording"])&&scheduleLoaded&&resultsFresh;
     status.dataset.results=String(state.results.length);
     status.dataset.standings=String(state.standings.length);
     if(coreOk&&liveCore&&errors.length===0){
