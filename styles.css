@@ -1525,3 +1525,31 @@ footer{line-height:1.5}
 }
 .inline-write-fallback:hover{color:var(--navy)}
 .write-backend-unavailable{position:relative}
+
+
+.write-warning-banner{
+  max-width:1180px;
+  margin:12px auto 0;
+  padding:14px 18px;
+  border:1px solid #e6c26a;
+  border-left:5px solid #c48a16;
+  border-radius:12px;
+  background:#fff8e7;
+  color:#5d4718;
+  display:grid;
+  gap:5px;
+  line-height:1.45;
+  box-shadow:0 6px 18px rgba(15,35,64,.04);
+}
+.write-warning-banner>a,
+.write-warning-banner a{
+  color:var(--crimson);
+  font-weight:850;
+}
+@media(max-width:560px){
+  .write-warning-banner{
+    margin:10px 12px 0;
+    padding:13px 14px;
+    font-size:.9rem;
+  }
+}
