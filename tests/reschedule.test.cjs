@@ -54,7 +54,7 @@ function makeBridge({missingResults=false,duplicateResults=false,failScheduleWri
   const environment={
     LockService:{getScriptLock:()=>lock},
     PropertiesService:{getScriptProperties:()=>({getProperty:()=> 'server-secret'})},
-    SpreadsheetApp:{getActiveSpreadsheet:()=>ss,flush(){}},
+    SpreadsheetApp:{openById:id=>{assert.equal(id,'1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI');return ss},flush(){}},
     ContentService:{
       MimeType:{JSON:'json'},
       createTextOutput:body=>({body,setMimeType(){return this}})
