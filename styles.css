@@ -1513,3 +1513,15 @@ footer{line-height:1.5}
 .reschedule-shell .score-entry-feedback{min-height:1.5em}
 .schedule-reschedule{display:inline-block;margin-top:8px;font-size:.77rem}
 .mobile-schedule-card .schedule-reschedule{margin-top:10px}
+
+
+.inline-write-fallback{
+  display:inline-flex;
+  margin-left:.35rem;
+  font-weight:850;
+  color:var(--crimson);
+  text-decoration:underline;
+  text-underline-offset:2px;
+}
+.inline-write-fallback:hover{color:var(--navy)}
+.write-backend-unavailable{position:relative}
