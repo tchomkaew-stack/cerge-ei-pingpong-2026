@@ -1,5 +1,4 @@
 /**
- * @OnlyCurrentDoc
  * CERGE-EI Ping Pong League 2026: participant score and schedule editing bridge.
  * Players do not need an account or PIN. The shared secret is server-side only.
  * Deploy as a Google Apps Script Web App, executing as the Sheet owner.
@@ -7,7 +6,16 @@
  * as Cloudflare Pages' SCORE_WRITE_SECRET secret variable.
  * Do NOT publish this secret or use the spreadsheet editor link as the endpoint.
  */
+const TOURNAMENT_SHEET_ID = '1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI';
 const SCORE_SHEET = 'Results recording';
+
+function getTournamentSpreadsheet_() {
+  const ss = SpreadsheetApp.openById(TOURNAMENT_SHEET_ID);
+  if (!ss || ss.getId() !== TOURNAMENT_SHEET_ID) {
+    throw Error('Could not open the tournament spreadsheet.');
+  }
+  return ss;
+}
 
 function respond_(body) {
   return ContentService.createTextOutput(JSON.stringify(body))
@@ -132,9 +140,7 @@ function doPost(e) {
     const expected=PropertiesService.getScriptProperties().getProperty('SCORE_WRITE_SECRET');
     if (!expected || body.secret!==expected) throw Error('Submission not authorized.');
     if(body.action==='reschedule'){
-      const ss=SpreadsheetApp.getActiveSpreadsheet();
-      if(!ss||ss.getId()!=='1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI')
-        throw Error('This script must be bound to the tournament spreadsheet.');
+      const ss=getTournamentSpreadsheet_();
       return respond_(reschedule_(body,ss));
     }
     if(!/^[A-G]$/.test(String(body.group||'')))throw Error('Invalid group.');
@@ -145,8 +151,7 @@ function doPost(e) {
     const data=isForfeit?null:validateScores_(body.scores);
     if(isForfeit && (!body.winner || ![normalized_(p1),normalized_(p2)].includes(normalized_(body.winner)) ||
        (Array.isArray(body.scores)&&body.scores.length)))throw Error('Choose a valid forfeit winner and leave scores empty.');
-    const ss=SpreadsheetApp.getActiveSpreadsheet();
-    if (!ss || ss.getId() !== '1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI') throw Error('This script must be bound to the tournament spreadsheet.');
+    const ss=getTournamentSpreadsheet_();
     const sheet=ss.getSheetByName(SCORE_SHEET);
     if(!sheet)throw Error('Results recording tab not found.');
     const all=sheet.getDataRange().getDisplayValues();
