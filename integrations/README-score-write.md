@@ -11,6 +11,12 @@ Participants can record a new result, correct an existing result, or record a fo
 - Forfeits are recorded in a named **Forfeit (Y/N)** column, created at the end of the sheet if absent. A forfeit awards a win/loss but no games or points.
 - Every web submission sets **Last updated** and appends the old/new values to **Result change history** (a new tab created if needed). Existing scores may be replaced by another submission.
 
+## Important Web App fix
+
+The Apps Script Web App must open the tournament spreadsheet explicitly with `SpreadsheetApp.openById(...)`. Do **not** use `SpreadsheetApp.getActiveSpreadsheet()` in the deployed Web App: Google's bound-script “active document” methods are not available in Web App execution context.
+
+If an older deployment still contains `getActiveSpreadsheet()`, both **Record Score** and **Change Schedule** can fail even though the script is correctly bound to the tournament spreadsheet.
+
 ## Activation after adding website rescheduling
 
 **Required even if score recording already works:** update the existing bound Google Apps Script to the latest repository `Code.gs`, then create a **new Web App deployment version**. GitHub updates alone do not update the running Google Apps Script. The existing Cloudflare secret and Apps Script URL can be reused; **no second PIN, account, or secret is needed**.
