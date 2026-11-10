@@ -1232,13 +1232,24 @@ async function checkScoreWriteAvailability(){
     scoreWriteEnabled=Boolean((await r.json()).enabled);
   }catch{scoreWriteEnabled=false}
   const notice=$("scoreEntryAvailability");
-  if(notice)notice.textContent=scoreWriteEnabled
-    ?"Enter your match result below."
-    :"Score entry is temporarily unavailable here. Please try again later or use the Google Sheet link below.";
+  if(notice){
+    if(scoreWriteEnabled){
+      notice.textContent="Enter your match result below.";
+    }else{
+      notice.innerHTML='Direct website score entry is temporarily unavailable. <a class="inline-write-fallback" href="https://docs.google.com/spreadsheets/d/1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Open the Google Sheet to record your score →</a>';
+    }
+  }
   const scheduleNotice=$("rescheduleAvailability");
-  if(scheduleNotice)scheduleNotice.textContent=scoreWriteEnabled
-    ?"Choose a match and enter the time agreed with your opponent."
-     :"Rescheduling is temporarily unavailable here. Please try again later or use the Google Sheet instructions below.";
+  if(scheduleNotice){
+    if(scoreWriteEnabled){
+      scheduleNotice.textContent="Choose a match and enter the time agreed with your opponent.";
+    }else{
+      scheduleNotice.innerHTML='Direct website rescheduling is temporarily unavailable. <a class="inline-write-fallback" href="https://docs.google.com/spreadsheets/d/1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Open the Google Sheet to change your match time →</a>';
+    }
+  }
+  document.querySelectorAll("[data-view='record-score'],[data-view='change-schedule']").forEach(el=>{
+    el.classList.toggle("write-backend-unavailable",!scoreWriteEnabled);
+  });
   validateScoreForm();
   validateRescheduleForm();
 }
