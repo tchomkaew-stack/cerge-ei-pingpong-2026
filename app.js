@@ -876,7 +876,6 @@ function renderHome(){
     '<div class="small-note">'+esc(r.p1)+' vs '+esc(r.p2)+'</div></div>').join(""):"No results recorded yet.";
   renderProgress();
   renderLeagueStories();
-  renderFeaturedRematches();
   renderMyMatches();
 }
 function renderMyMatches(){
@@ -957,17 +956,21 @@ function renderLeagueStories(){
   const panel=$("aroundLeaguePanel"),list=$("aroundLeague");
   if(!panel||!list)return;
   const completed=new Set(state.results.map(r=>pairKey(r.group,r.p1,r.p2))).size;
-  const milestones=[25,50,75,100].filter(n=>completed>=n);
-  const completedGroups="ABCDEFG".split("").filter(g=>{
-    const matches=state.schedule.filter(m=>m.group===g);
-    return matches.length===15&&matches.every(m=>state.results.some(r=>pairKey(r.group,r.p1,r.p2)===pairKey(m.group,m.p1,m.p2)));
-  });
+  const activeGroups=[...new Set(state.results.map(r=>r.group).filter(Boolean))];
   const highlights=sortedResults(state.results).filter(r=>isFiveGameMatch(r)).slice(0,2);
   const stories=[];
-  if(milestones.length)stories.push({title:milestones.at(-1)+" matches completed",body:"A group-stage milestone for the whole league."});
-  if(completedGroups.length)stories.push({title:"Group "+completedGroups.join(", ")+" complete",body:"All 15 fixtures have recorded results."});
-  for(const r of highlights)stories.push({title:isComeback(r)?"A comeback from two games down":"Five-game thriller",
-    body:r.p1+" vs "+r.p2+" · Group "+r.group+" · "+r.winner+" won "+resultScoreSummary(r)});
+  if(completed)stories.push({
+    title:completed+" matches recorded",
+    body:"The group stage is moving — every result adds another piece to the tournament story."
+  });
+  if(activeGroups.length===7)stories.push({
+    title:"All seven groups are underway",
+    body:"Every group now has at least one recorded result."
+  });
+  for(const r of highlights)stories.push({
+    title:"Five-game thriller",
+    body:r.p1+" vs "+r.p2+" · Group "+r.group+" · decided in the fifth game."
+  });
   panel.hidden=!stories.length;
   list.innerHTML=stories.slice(0,3).map(x=>'<article class="league-story"><strong>'+esc(x.title)+'</strong><p>'+esc(x.body)+'</p></article>').join("");
 }
