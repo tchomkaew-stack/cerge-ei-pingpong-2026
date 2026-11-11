@@ -66,7 +66,7 @@ test('normal score recording preserves schedule and set-score formula',()=>{
   assert.equal(reply.setScore,'3-0');
   assert.deepEqual(b.results[1].slice(6,11),['11-5','11-7','11-8','','']);
   assert.equal(b.results[1][11],'Julie Chytilová');
-  assert.equal(b.results[1][12],'=FORMULA');
+  assert.equal(b.results[1][12],'3-0');
   assert.equal(b.results[1][13],'N');
   assert.ok(b.results[1][14] instanceof Date);
   assert.equal(JSON.stringify(b.schedule),scheduleBefore);
@@ -81,7 +81,7 @@ test('score correction replaces old scores and records both changes',()=>{
   assert.equal(reply.setScore,'3-2');
   assert.equal(b.results[1][6],'5-11');
   assert.equal(b.results[1][10],'8-11');
-  assert.equal(b.results[1][12],'=FORMULA');
+  assert.equal(b.results[1][12],'3-2');
   assert.equal(b.histories['Result change history'].rows.length,3);
 });
 test('forfeit clears games, preserves formula and awards winner',()=>{
@@ -92,7 +92,7 @@ test('forfeit clears games, preserves formula and awards winner',()=>{
   assert.equal(reply.forfeit,true);
   assert.deepEqual(b.results[1].slice(6,11),['','','','','']);
   assert.equal(b.results[1][11],'Václav Jeřábek');
-  assert.equal(b.results[1][12],'=FORMULA');
+  assert.equal(b.results[1][12],'W/O');
   assert.equal(b.results[1][13],'Y');
 });
 test('invalid score and unauthorized requests cannot alter data',()=>{
