@@ -115,6 +115,7 @@
   <button class="tab" data-view="standings">Standings</button>
   <button class="tab" data-view="groups">Groups</button>
   <button class="tab" data-view="rules">Rules</button>
+  <button class="tab tab-subtle" data-view="all-time">All-time</button>
   <button id="knockoutTab" class="tab" data-view="knockout" hidden>Knockout</button>
   <button id="notificationBtn" class="notification-btn" type="button" aria-label="Tournament notifications" aria-expanded="false" aria-controls="notificationPanel">
     <span class="notification-bell" aria-hidden="true">🔔</span>
@@ -295,6 +296,27 @@
     <section class="panel">
       <h2>Groups</h2>
       <div id="groupsGrid" class="groups-grid"></div>
+    </section>
+  </section>
+
+  <section id="all-time" class="view">
+    <section class="panel alltime-panel">
+      <div class="section-heading">
+        <div>
+          <span class="section-label">HISTORY · OPTIONAL</span>
+          <h2>CERGE-EI All-time ranking</h2>
+          <p>A small statistical extra for players who enjoy the numbers. It does not affect the current tournament standings or qualification.</p>
+        </div>
+      </div>
+
+      <div class="alltime-explainer" role="note">
+        <strong>How the rating works</strong>
+        <p>Everyone starts from the same rating. After each played match, the winner gains rating and the loser loses rating. The size of the change depends on the opponent's rating: beating a highly rated player is worth more, while an expected result changes the rating less.</p>
+        <p>Only players with at least <strong>3 actually played matches</strong> appear in the ranking. <strong>Forfeits are excluded.</strong> The table combines recorded 2025 matches with current 2026 results and updates whenever the tournament data is refreshed.</p>
+      </div>
+
+      <p id="allTimeStatus" class="small-note">Loading historical rating…</p>
+      <div id="allTimeTable"></div>
     </section>
   </section>
 
