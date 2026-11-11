@@ -1553,3 +1553,36 @@ footer{line-height:1.5}
     font-size:.9rem;
   }
 }
+
+
+/* All-time ranking: deliberately understated historical/statistical view. */
+.tab-subtle{font-weight:650;color:#66778a}
+.tab-subtle.active{color:inherit}
+.alltime-panel{max-width:900px;margin-left:auto;margin-right:auto}
+.alltime-explainer{
+  margin:4px 0 16px;
+  padding:14px 16px;
+  border:1px solid var(--ui-border);
+  border-radius:var(--ui-radius-small);
+  background:var(--ui-soft);
+}
+.alltime-explainer>strong{display:block;color:var(--navy);font-size:.9rem;margin-bottom:5px}
+.alltime-explainer p{margin:7px 0 0;font-size:.81rem;line-height:1.6;color:#5f7085}
+.alltime-table{width:100%;border-collapse:collapse}
+.alltime-table th,.alltime-table td{
+  padding:11px 12px;border-bottom:1px solid #e8edf3;text-align:left;font-size:.84rem
+}
+.alltime-table th{
+  color:#65778c;font-size:.72rem;text-transform:uppercase;letter-spacing:.045em;font-weight:800
+}
+.alltime-table td:nth-child(1),.alltime-table td:nth-child(3),
+.alltime-table td:nth-child(4),.alltime-table td:nth-child(5){
+  font-variant-numeric:tabular-nums;white-space:nowrap
+}
+.alltime-table tbody tr:last-child td{border-bottom:0}
+@media(max-width:560px){
+  .alltime-panel{padding:16px}
+  .alltime-explainer{padding:12px 13px}
+  .alltime-table th,.alltime-table td{padding:9px 8px;font-size:.78rem}
+  .alltime-table th{font-size:.65rem}
+}
