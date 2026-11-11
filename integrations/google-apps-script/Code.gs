@@ -176,7 +176,8 @@ function doPost(e) {
       winner:String(row[11]||''),
       forfeit:''
     };
-    // The sheet's set-score formula in M is never overwritten.
+    // Keep website submissions consistent with direct Google Sheet entry:
+    // column M shows W/O for forfeits and the final set score for played matches.
     // Keep the forfeit flag in a dedicated named column, creating it at the end if needed.
     const headers=all[headings].map(normalized_);
     let forfeitCol=headers.findIndex(x=>x==='forfeit (y/n)'||x==='forfeit'||x==='forfeit y/n')+1;
@@ -193,6 +194,7 @@ function doPost(e) {
     const setScore=isForfeit?'':Math.max(...data.wins)+'-'+Math.min(...data.wins);
     sheet.getRange(found+1,7,1,5).setValues([scores]);
     sheet.getRange(found+1,12).setValue(winner);
+    sheet.getRange(found+1,13).setValue(isForfeit?'W/O':setScore);
     sheet.getRange(found+1,forfeitCol).setValue(isForfeit?'Y':'N');
     let updatedCol=headers.findIndex(x=>x==='last updated'||x==='updated at'||x==='recorded at')+1;
     if(!updatedCol){
