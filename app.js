@@ -952,13 +952,67 @@ function isComeback(r){
   const downSecond=first.every(x=>x[1]<x[0]);
   return (downFirst&&last.every(x=>x[0]>x[1]))||(downSecond&&last.every(x=>x[1]>x[0]));
 }
+function standingsStory(){
+  const groups="ABCDEFG".split("").map(group=>{
+    const fixtures=state.schedule.filter(m=>m.group===group);
+    const players=[...new Set(fixtures.flatMap(m=>[m.p1,m.p2]).filter(Boolean))];
+    const rows=players.map(player=>{
+      const played=state.results.filter(r=>r.group===group&&
+        (sheetKey(r.p1)===sheetKey(player)||sheetKey(r.p2)===sheetKey(player)));
+      const wins=played.filter(r=>sheetKey(r.winner)===sheetKey(player)).length;
+      return {player,wins,played:played.length,remaining:Math.max(0,5-played.length),maxWins:wins+Math.max(0,5-played.length)};
+    }).sort((a,b)=>b.wins-a.wins||a.played-b.played||a.player.localeCompare(b.player));
+    const clinched=rows.filter(x=>{
+      if(x.played<3)return false;
+      const others=rows.filter(y=>y.player!==x.player);
+      return others.filter(y=>y.maxWins>=x.wins).length<=1;
+    });
+    return {group,rows,clinched};
+  });
+
+  const clinchedGroup=groups.find(g=>g.clinched.length);
+  if(clinchedGroup){
+    const names=clinchedGroup.clinched.map(x=>x.player);
+    return {
+      title:"Top-two place secured in Group "+clinchedGroup.group,
+      body:names.join(" & ")+" "+(names.length===1?"has":"have")+" mathematically secured a top-two finish. Final seeding is still to be decided."
+    };
+  }
+
+  const perfectCandidates=[];
+  for(const g of groups){
+    const perfect=g.rows.filter(x=>x.played>=2&&x.wins===x.played);
+    if(perfect.length)perfectCandidates.push({group:g.group,perfect,rows:g.rows});
+  }
+  perfectCandidates.sort((a,b)=>Math.max(...b.perfect.map(x=>x.wins))-Math.max(...a.perfect.map(x=>x.wins)));
+  const lead=perfectCandidates[0];
+  if(lead){
+    const leaders=lead.perfect.sort((a,b)=>b.wins-a.wins).slice(0,2);
+    const body=leaders.map(x=>x.player+" "+x.wins+"–0").join(" · ")+" — no top-two place is mathematically clinched yet.";
+    return {title:"Group "+lead.group+" qualification watch",body};
+  }
+
+  const open=groups
+    .map(g=>({group:g.group,contenders:g.rows.filter(x=>x.maxWins>=3).length}))
+    .sort((a,b)=>b.contenders-a.contenders)[0];
+  if(open&&open.contenders>=4){
+    return {
+      title:"Group "+open.group+" race still wide open",
+      body:open.contenders+" players can still finish with at least three wins."
+    };
+  }
+  return null;
+}
+
 function renderLeagueStories(){
   const panel=$("aroundLeaguePanel"),list=$("aroundLeague");
   if(!panel||!list)return;
   const completed=new Set(state.results.map(r=>pairKey(r.group,r.p1,r.p2))).size;
   const activeGroups=[...new Set(state.results.map(r=>r.group).filter(Boolean))];
-  const highlights=sortedResults(state.results).filter(r=>isFiveGameMatch(r)).slice(0,2);
+  const highlights=sortedResults(state.results).filter(r=>isFiveGameMatch(r)).slice(0,1);
   const stories=[];
+  const standing=standingsStory();
+  if(standing)stories.push(standing);
   if(completed)stories.push({
     title:completed+" matches recorded",
     body:"The group stage is moving — every result adds another piece to the tournament story."
