@@ -1,4 +1,5 @@
 const SHEET_ID = "1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI";
+const HISTORY_SHEET_ID = "1hDaOmQ4qGgQzFaiSmHOM7B1YWUxh-t2zqoPojLTxhPI";
 const ALLOWED = new Set(["Groups", "Schedule", "Results recording", "Standing", "Announcements", "Knockout"]);
 
 export default {
@@ -116,6 +117,30 @@ export default {
         return Response.json({ ok: true, winner: result.winner, setScore: result.setScore, forfeit: Boolean(result.forfeit), auditLogged: result.auditLogged, auditWarning: result.auditWarning || "" }, { headers: { "cache-control": "no-store" } });
       } catch (e) {
         return Response.json({ ok: false, error: String(e.message || e) }, { status: 400 });
+      }
+    }
+
+    if (url.pathname === "/api/all-time-history") {
+      const googleUrl =
+        "https://docs.google.com/spreadsheets/d/" + HISTORY_SHEET_ID +
+        "/gviz/tq?tqx=out:csv&_=" + Date.now();
+      try {
+        const upstream = await fetch(googleUrl, { cache: "no-store", headers: { "User-Agent": "Mozilla/5.0", "Cache-Control": "no-cache" } });
+        const body = await upstream.text();
+        const ct = upstream.headers.get("content-type") || "";
+        if (!upstream.ok) return new Response("Historical Google Sheet returned HTTP " + upstream.status, { status: 502 });
+        if (body.trim().startsWith("<") || ct.includes("text/html"))
+          return new Response("Historical Google Sheet is not anonymously readable.", { status: 502 });
+        return new Response(body, {
+          status: 200,
+          headers: {
+            "content-type": "text/csv; charset=utf-8",
+            "cache-control": "no-store, max-age=0",
+            "x-tournament-source": "2025-history"
+          }
+        });
+      } catch {
+        return new Response("Could not reach the historical Google Sheet", { status: 502 });
       }
     }
 
