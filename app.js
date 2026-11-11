@@ -1104,7 +1104,12 @@ function renderScoreForm(){
   const visible=scoreFormMatches.map((m,i)=>({m,i})).filter(({m})=>
     !search||sheetKey(m.p1).includes(search)||sheetKey(m.p2).includes(search)||
     sheetKey("group "+m.group).includes(search));
-  selector.innerHTML='<option value="">'+(visible.length?"Choose your match…":"No matches found — try another name")+'</option>'+
+  const promptText=!visible.length
+    ?"No matches found — try another name"
+    :search
+      ?visible.length+" "+(visible.length===1?"match":"matches")+" found — choose one"
+      :"Choose your match…";
+  selector.innerHTML='<option value="">'+promptText+'</option>'+
     visible.map(({m,i})=>{
       const recorded=matchHasResult(m);
       return '<option value="'+i+'">'+esc('Group '+m.group+' · '+m.p1+' vs '+m.p2+
