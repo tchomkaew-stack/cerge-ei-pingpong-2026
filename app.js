@@ -1,5 +1,5 @@
 const SHEET_ID="1tbDsjuuQhpLPLtzR5w14DlT-D1HK4slx4iFtcWjfhyI";
-const state={groups:[],schedule:[],results:[],standings:[],announcements:[],knockout:[]};
+const state={groups:[],schedule:[],results:[],standings:[],announcements:[],knockout:[],historicalResults:[]};
 const FALLBACK_ANNOUNCEMENTS=[{
   id:"group-stage-best-of-five-2026-11-02",
   title:"Rule clarification — group stage is best of 5",
@@ -178,6 +178,15 @@ async function fetchSheet(name){
   if(!rows.length) throw new Error(name+": empty response");
   return rows;
 }
+async function fetchHistoricalResults(){
+  const r=await fetch("/api/all-time-history",{cache:"no-store"});
+  const text=await r.text();
+  if(!r.ok)throw new Error("Historical results: HTTP "+r.status+(text?(" — "+text.slice(0,160)):""));
+  if(text.trim().startsWith("<"))throw new Error("Historical results: API returned HTML instead of CSV");
+  const rows=parseCSV(text);
+  if(!rows.length)throw new Error("Historical results: empty response");
+  return rows;
+}
 function headerIndex(rows,test){return rows.findIndex(test)}
 function parseGroups(rows){
   const h=headerIndex(rows,r=>norm(r[0]).toLowerCase()=="group"&&norm(r[1]).toLowerCase()=="player");
@@ -308,6 +317,94 @@ function parseResults(rows){
     };
   }).filter(r=>r.winner && [sheetKey(r.p1),sheetKey(r.p2)].includes(sheetKey(r.winner)));
 }
+const ALL_TIME_K=24;
+const ALL_TIME_START=1500;
+const ALL_TIME_MIN_MATCHES=3;
+const ALL_TIME_KNOCKOUT_2025=[
+  {p1:"Jan Vykouk",p2:"Shehzada G. Abbas",winner:"Shehzada G. Abbas"},
+  {p1:"Daniel Vykoukal",p2:"Dominik Stipic",winner:"Dominik Stipic"},
+  {p1:"Arman Kazemi",p2:"Filip Matějka",winner:"Filip Matějka"},
+  {p1:"Ctirad Slavík",p2:"Shehzada G. Abbas",winner:"Ctirad Slavík"},
+  {p1:"Yaroslav Korobka",p2:"Dominik Stipic",winner:"Yaroslav Korobka"},
+  {p1:"Michael Schulz",p2:"Michal Bauer",winner:"Michael Schulz"},
+  {p1:"Yaroslav Korobka",p2:"Michael Schulz",winner:"Michael Schulz"},
+  {p1:"Ctirad Slavík",p2:"Filip Matějka",winner:"Ctirad Slavík"},
+  {p1:"Ctirad Slavík",p2:"Michael Schulz",winner:"Ctirad Slavík"}
+];
+function allTimeCanonicalName(name){
+  const key=sheetKey(name);
+  const aliases=new Map([
+    ["marek kapicka","Marek Kapička"],
+    ["ctirad slavik","Ctirad Slavík"],
+    ["filip matejka","Filip Matějka"],
+    ["vasek jerabek","Václav Jeřábek"],
+    ["vaclav jerabek","Václav Jeřábek"],
+    ["shehzada ghulam abbas","Shehzada G. Abbas"],
+    ["jose gomez castro","José Gómez"],
+    ["jose gomez","José Gómez"],
+    ["tomas haufer","Tomas Haufer"]
+  ]);
+  return aliases.get(key)||norm(name);
+}
+function allTimeMatches(){
+  const historical=state.historicalResults
+    .filter(r=>String(r.forfeit||"").trim().toUpperCase()!=="Y")
+    .map(r=>({p1:r.p1,p2:r.p2,winner:r.winner}));
+  const current=state.results
+    .filter(r=>String(r.forfeit||"").trim().toUpperCase()!=="Y")
+    .map(r=>({p1:r.p1,p2:r.p2,winner:r.winner}));
+  return [...historical,...ALL_TIME_KNOCKOUT_2025,...current]
+    .map(m=>({
+      p1:allTimeCanonicalName(m.p1),
+      p2:allTimeCanonicalName(m.p2),
+      winner:allTimeCanonicalName(m.winner)
+    }))
+    .filter(m=>m.p1&&m.p2&&[sheetKey(m.p1),sheetKey(m.p2)].includes(sheetKey(m.winner)));
+}
+function calculateAllTimeElo(){
+  const ratings=new Map(),stats=new Map();
+  const getRating=p=>ratings.has(p)?ratings.get(p):ALL_TIME_START;
+  const getStats=p=>{
+    if(!stats.has(p))stats.set(p,{player:p,matches:0,wins:0,losses:0});
+    return stats.get(p);
+  };
+  for(const m of allTimeMatches()){
+    const a=m.p1,b=m.p2,sa=sheetKey(m.winner)===sheetKey(a)?1:0;
+    const ra=getRating(a),rb=getRating(b);
+    const ea=1/(1+Math.pow(10,(rb-ra)/400));
+    ratings.set(a,ra+ALL_TIME_K*(sa-ea));
+    ratings.set(b,rb+ALL_TIME_K*((1-sa)-(1-ea)));
+    const as=getStats(a),bs=getStats(b);
+    as.matches++;bs.matches++;
+    if(sa){as.wins++;bs.losses++;}else{bs.wins++;as.losses++;}
+  }
+  return [...ratings.entries()].map(([player,rating])=>({
+    ...getStats(player),
+    rating:Math.round(rating)
+  })).filter(x=>x.matches>=ALL_TIME_MIN_MATCHES)
+    .sort((a,b)=>b.rating-a.rating||b.wins-a.wins||a.player.localeCompare(b.player));
+}
+function renderAllTime(){
+  const wrap=$("allTimeTable"),status=$("allTimeStatus");
+  if(!wrap||!status)return;
+  if(!state.historicalResults.length){
+    status.textContent="Historical results are temporarily unavailable.";
+    wrap.innerHTML="";
+    return;
+  }
+  const rows=calculateAllTimeElo().slice(0,10);
+  status.textContent="Top 10 · minimum 3 played matches · forfeits excluded · Elo updates from recorded results.";
+  wrap.innerHTML=rows.length?'<div class="table-wrap"><table class="alltime-table"><thead><tr>'+
+    '<th>Rank</th><th>Player</th><th>Rating</th><th>W–L</th><th>Matches</th>'+
+    '</tr></thead><tbody>'+rows.map((x,i)=>'<tr>'+
+      '<td><strong>'+(i+1)+'</strong></td>'+
+      '<td>'+esc(x.player)+'</td>'+
+      '<td><strong>'+x.rating+'</strong></td>'+
+      '<td>'+x.wins+'–'+x.losses+'</td>'+
+      '<td>'+x.matches+'</td>'+
+    '</tr>').join("")+'</tbody></table></div>':"No eligible players yet.";
+}
+
 function parseStandings(rows){
   const h=rows.findIndex(r=>{
     const cols=r.map(sheetKey);
@@ -727,13 +824,20 @@ async function refreshData(){
 
     const core=["Groups","Schedule","Results recording","Standing"];
     const names=[...core,"Knockout","Announcements"];
-    const responses=await Promise.allSettled(names.map(name=>fetchSheet(name)));
+    const [responses,historyResponse]=await Promise.all([
+      Promise.allSettled(names.map(name=>fetchSheet(name))),
+      fetchHistoricalResults().then(rows=>({ok:true,rows})).catch(error=>({ok:false,error}))
+    ]);
     const loaded={};
     const errors=[];
     responses.forEach((response,i)=>{
       if(response.status==="fulfilled")loaded[names[i]]=response.value;
       else if(core.includes(names[i]))errors.push(names[i]+": "+String(response.reason?.message||response.reason));
     });
+
+    if(historyResponse.ok){
+      state.historicalResults=parseResults(historyResponse.rows);
+    }
 
     if(loaded.Groups){
       const parsed=parseGroups(loaded.Groups);
@@ -1465,7 +1569,7 @@ async function submitRescheduleForm(event){
     $("rescheduleFeedback").textContent=playerSubmissionError(err.message,"reschedule");
   }finally{rescheduleSubmitting=false;validateRescheduleForm()}
 }
-function renderAll(){removeExpiredPromotions();renderHome();renderSchedule();renderResults();renderGroups();renderStandings();renderKnockout();renderNotifications();renderScoreForm();renderRescheduleForm()}
+function renderAll(){removeExpiredPromotions();renderHome();renderSchedule();renderResults();renderGroups();renderStandings();renderAllTime();renderKnockout();renderNotifications();renderScoreForm();renderRescheduleForm()}
 removeExpiredPromotions();
 
 document.querySelectorAll(".tab,[data-view='record-score'],[data-view='change-schedule'],[data-view='results']").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
