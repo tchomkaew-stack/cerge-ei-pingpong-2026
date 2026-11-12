@@ -1056,81 +1056,125 @@ function isComeback(r){
   const downSecond=first.every(x=>x[1]<x[0]);
   return (downFirst&&last.every(x=>x[0]>x[1]))||(downSecond&&last.every(x=>x[1]>x[0]));
 }
-function standingsStory(){
+function standingsStories(){
+  const playedResults=state.results.filter(r=>String(r.forfeit||"").trim().toUpperCase()!=="Y");
   const groups="ABCDEFG".split("").map(group=>{
     const fixtures=state.schedule.filter(m=>m.group===group);
     const players=[...new Set(fixtures.flatMap(m=>[m.p1,m.p2]).filter(Boolean))];
-    const rows=players.map(player=>{
-      const played=state.results.filter(r=>r.group===group&&
+
+    const officialRows=players.map(player=>{
+      const results=state.results.filter(r=>r.group===group&&
         (sheetKey(r.p1)===sheetKey(player)||sheetKey(r.p2)===sheetKey(player)));
-      const wins=played.filter(r=>sheetKey(r.winner)===sheetKey(player)).length;
-      return {player,wins,played:played.length,remaining:Math.max(0,5-played.length),maxWins:wins+Math.max(0,5-played.length)};
+      const wins=results.filter(r=>sheetKey(r.winner)===sheetKey(player)).length;
+      return {player,wins,played:results.length,remaining:Math.max(0,5-results.length),maxWins:wins+Math.max(0,5-results.length)};
     }).sort((a,b)=>b.wins-a.wins||a.played-b.played||a.player.localeCompare(b.player));
-    const clinched=rows.filter(x=>{
+
+    const playedRows=players.map(player=>{
+      const results=playedResults.filter(r=>r.group===group&&
+        (sheetKey(r.p1)===sheetKey(player)||sheetKey(r.p2)===sheetKey(player)));
+      const wins=results.filter(r=>sheetKey(r.winner)===sheetKey(player)).length;
+      return {player,wins,played:results.length};
+    }).sort((a,b)=>b.wins-a.wins||b.played-a.played||a.player.localeCompare(b.player));
+
+    const clinched=officialRows.filter(x=>{
       if(x.played<3)return false;
-      const others=rows.filter(y=>y.player!==x.player);
+      const others=officialRows.filter(y=>y.player!==x.player);
       return others.filter(y=>y.maxWins>=x.wins).length<=1;
     });
-    return {group,rows,clinched};
+
+    return {group,officialRows,playedRows,clinched};
   });
 
-  const clinchedGroup=groups.find(g=>g.clinched.length);
-  if(clinchedGroup){
-    const names=clinchedGroup.clinched.map(x=>x.player);
-    return {
-      title:"Top-two place secured in Group "+clinchedGroup.group,
-      body:names.join(" & ")+" "+(names.length===1?"has":"have")+" mathematically secured a top-two finish. Final seeding is still to be decided."
-    };
-  }
+  const stories=[];
 
-  const perfectCandidates=[];
   for(const g of groups){
-    const perfect=g.rows.filter(x=>x.played>=2&&x.wins===x.played);
-    if(perfect.length)perfectCandidates.push({group:g.group,perfect,rows:g.rows});
-  }
-  perfectCandidates.sort((a,b)=>Math.max(...b.perfect.map(x=>x.wins))-Math.max(...a.perfect.map(x=>x.wins)));
-  const lead=perfectCandidates[0];
-  if(lead){
-    const leaders=lead.perfect.sort((a,b)=>b.wins-a.wins).slice(0,2);
-    const body=leaders.map(x=>x.player+" "+x.wins+"–0").join(" · ")+" — no top-two place is mathematically clinched yet.";
-    return {title:"Group "+lead.group+" qualification watch",body};
+    if(!g.clinched.length)continue;
+    const names=g.clinched.map(x=>x.player);
+    stories.push({
+      priority:100,
+      group:g.group,
+      title:names.length===1?"Ticket punched in Group "+g.group:"Two tickets punched in Group "+g.group,
+      body:names.join(" & ")+" "+(names.length===1?"has":"have")+" secured a top-two place — the only thing left to settle is the final order."
+    });
   }
 
-  const open=groups
-    .map(g=>({group:g.group,contenders:g.rows.filter(x=>x.maxWins>=3).length}))
-    .sort((a,b)=>b.contenders-a.contenders)[0];
-  if(open&&open.contenders>=4){
-    return {
-      title:"Group "+open.group+" race still wide open",
-      body:open.contenders+" players can still finish with at least three wins."
-    };
+  for(const g of groups){
+    const perfect=g.playedRows.filter(x=>x.played>=2&&x.wins===x.played);
+    if(perfect.length>=3){
+      const leaders=perfect.slice(0,3);
+      stories.push({
+        priority:80+Math.max(...leaders.map(x=>x.wins)),
+        group:g.group,
+        title:"Three perfect starts in Group "+g.group,
+        body:leaders.map(x=>x.player+" "+x.wins+"–0").join(" · ")+" — three clean starts, and this group is getting very interesting."
+      });
+    }else if(perfect.length===2){
+      stories.push({
+        priority:70+Math.max(...perfect.map(x=>x.wins)),
+        group:g.group,
+        title:"Two perfect starts in Group "+g.group,
+        body:perfect.map(x=>x.player+" "+x.wins+"–0").join(" · ")+" — both are still spotless, with plenty of table tennis left to play."
+      });
+    }
   }
-  return null;
+
+  for(const g of groups){
+    const leader=g.playedRows.find(x=>x.played>=3&&x.wins===x.played);
+    if(!leader)continue;
+    if(stories.some(s=>s.group===g.group&&s.priority>=70))continue;
+    stories.push({
+      priority:65+leader.wins,
+      group:g.group,
+      title:leader.player+" is setting the pace in Group "+g.group,
+      body:leader.wins+" matches, "+leader.wins+" wins — a perfect start, with the group story still far from finished."
+    });
+  }
+
+  for(const g of groups){
+    if(stories.some(s=>s.group===g.group))continue;
+    const active=g.playedRows.filter(x=>x.played>0);
+    if(active.length<4)continue;
+    const maxWins=Math.max(...active.map(x=>x.wins));
+    const close=active.filter(x=>maxWins-x.wins<=1);
+    if(close.length>=4){
+      stories.push({
+        priority:50,
+        group:g.group,
+        title:"No one has broken away in Group "+g.group,
+        body:close.length+" players are still packed within one win of the lead — exactly the kind of group where every next match matters."
+      });
+    }
+  }
+
+  return stories.sort((a,b)=>b.priority-a.priority||a.group.localeCompare(b.group));
 }
 
 function renderLeagueStories(){
   const panel=$("aroundLeaguePanel"),list=$("aroundLeague");
   if(!panel||!list)return;
-  const completed=new Set(state.results.map(r=>pairKey(r.group,r.p1,r.p2))).size;
-  const activeGroups=[...new Set(state.results.map(r=>r.group).filter(Boolean))];
-  const highlights=sortedResults(state.results).filter(r=>isFiveGameMatch(r)).slice(0,1);
-  const stories=[];
-  const standing=standingsStory();
-  if(standing)stories.push(standing);
-  if(completed)stories.push({
-    title:completed+" matches recorded",
-    body:"The group stage is moving — every result adds another piece to the tournament story."
-  });
-  if(activeGroups.length===7)stories.push({
-    title:"All seven groups are underway",
-    body:"Every group now has at least one recorded result."
-  });
-  for(const r of highlights)stories.push({
-    title:"Five-game thriller",
-    body:r.p1+" vs "+r.p2+" · Group "+r.group+" · decided in the fifth game."
-  });
+
+  const stories=standingsStories();
+
+  const playedFiveGame=sortedResults(state.results)
+    .filter(r=>r.forfeit!=="Y"&&isFiveGameMatch(r))
+    .filter(r=>{
+      const pairs=(r.scores||[]).map(scorePair).filter(Boolean);
+      return pairs.length===5&&pairs.every(([a,b])=>a>0&&b>0);
+    })[0];
+
+  if(stories.length<3&&playedFiveGame){
+    stories.push({
+      priority:40,
+      group:playedFiveGame.group,
+      title:"Five games, all the way",
+      body:playedFiveGame.p1+" and "+playedFiveGame.p2+" took it to a deciding fifth in Group "+playedFiveGame.group+" — exactly what a friendly rivalry should look like."
+    });
+  }
+
   panel.hidden=!stories.length;
-  list.innerHTML=stories.slice(0,3).map(x=>'<article class="league-story"><strong>'+esc(x.title)+'</strong><p>'+esc(x.body)+'</p></article>').join("");
+  list.innerHTML=stories.slice(0,3).map(x=>
+    '<article class="league-story"><strong>'+esc(x.title)+'</strong><p>'+esc(x.body)+'</p></article>'
+  ).join("");
 }
 
 function renderResults(){
