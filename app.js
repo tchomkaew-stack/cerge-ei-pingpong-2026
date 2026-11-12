@@ -1066,8 +1066,8 @@ function standingsStories(){
       const results=state.results.filter(r=>r.group===group&&
         (sheetKey(r.p1)===sheetKey(player)||sheetKey(r.p2)===sheetKey(player)));
       const wins=results.filter(r=>sheetKey(r.winner)===sheetKey(player)).length;
-      return {player,wins,played:results.length,remaining:Math.max(0,5-results.length),maxWins:wins+Math.max(0,5-results.length)};
-    }).sort((a,b)=>b.wins-a.wins||a.played-b.played||a.player.localeCompare(b.player));
+      return {player,wins,losses:results.length-wins,played:results.length,remaining:Math.max(0,5-results.length),maxWins:wins+Math.max(0,5-results.length)};
+    }).sort((a,b)=>b.wins-a.wins||a.losses-b.losses||a.played-b.played||a.player.localeCompare(b.player));
 
     const playedRows=players.map(player=>{
       const results=playedResults.filter(r=>r.group===group&&
@@ -1091,14 +1091,38 @@ function standingsStories(){
     if(!g.clinched.length)continue;
     const names=g.clinched.map(x=>x.player);
     stories.push({
-      priority:100,
+      priority:120,
       group:g.group,
       title:names.length===1?"Ticket punched in Group "+g.group:"Two tickets punched in Group "+g.group,
-      body:names.join(" & ")+" "+(names.length===1?"has":"have")+" secured a top-two place — the only thing left to settle is the final order."
+      body:names.join(" & ")+" "+(names.length===1?"has":"have")+" secured a top-two place — the final order is still there to be fought for."
     });
   }
 
+  // Official standings can make a good story even when some recorded wins are
+  // walkovers. We mention only the records, never the walkover itself, and
+  // always make clear that the rest of the group is still in the race.
   for(const g of groups){
+    if(stories.some(s=>s.group===g.group&&s.priority>=120))continue;
+    const unbeaten=g.officialRows.filter(x=>x.played>=2&&x.losses===0&&x.wins>=2);
+    if(unbeaten.length>=2){
+      const leaders=unbeaten.slice(0,3);
+      const leadWins=Math.max(...leaders.map(x=>x.wins));
+      const title=leaders.length>=3
+        ?"Three unbeaten records in Group "+g.group
+        :"Group "+g.group+" leaders — and the chase is on";
+      const body=leaders.map(x=>x.player+" "+x.wins+"–0").join(" · ")+
+        " — they have made the early running, but no top-two place is secured yet and the rest of the group still has room to make a move.";
+      stories.push({
+        priority:95+leadWins+(leaders.length>=3?2:0),
+        group:g.group,
+        title,
+        body
+      });
+    }
+  }
+
+  for(const g of groups){
+    if(stories.some(s=>s.group===g.group))continue;
     const perfect=g.playedRows.filter(x=>x.played>=2&&x.wins===x.played);
     if(perfect.length>=3){
       const leaders=perfect.slice(0,3);
@@ -1106,33 +1130,33 @@ function standingsStories(){
         priority:80+Math.max(...leaders.map(x=>x.wins)),
         group:g.group,
         title:"Three perfect starts in Group "+g.group,
-        body:leaders.map(x=>x.player+" "+x.wins+"–0").join(" · ")+" — three clean starts, and this group is getting very interesting."
+        body:leaders.map(x=>x.player+" "+x.wins+"–0").join(" · ")+" — three clean starts, but there is still plenty of room for the group to turn."
       });
     }else if(perfect.length===2){
       stories.push({
         priority:70+Math.max(...perfect.map(x=>x.wins)),
         group:g.group,
         title:"Two perfect starts in Group "+g.group,
-        body:perfect.map(x=>x.player+" "+x.wins+"–0").join(" · ")+" — both are still spotless, with plenty of table tennis left to play."
+        body:perfect.map(x=>x.player+" "+x.wins+"–0").join(" · ")+" — both are still spotless, and the chase behind them is very much alive."
       });
     }
   }
 
   for(const g of groups){
+    if(stories.some(s=>s.group===g.group))continue;
     const leader=g.playedRows.find(x=>x.played>=3&&x.wins===x.played);
     if(!leader)continue;
-    if(stories.some(s=>s.group===g.group&&s.priority>=70))continue;
     stories.push({
       priority:65+leader.wins,
       group:g.group,
       title:leader.player+" is setting the pace in Group "+g.group,
-      body:leader.wins+" matches, "+leader.wins+" wins — a perfect start, with the group story still far from finished."
+      body:leader.wins+" matches, "+leader.wins+" wins — a perfect start, but there is still plenty of group-stage story left to write."
     });
   }
 
   for(const g of groups){
     if(stories.some(s=>s.group===g.group))continue;
-    const active=g.playedRows.filter(x=>x.played>0);
+    const active=g.officialRows.filter(x=>x.played>0);
     if(active.length<4)continue;
     const maxWins=Math.max(...active.map(x=>x.wins));
     const close=active.filter(x=>maxWins-x.wins<=1);
@@ -1141,7 +1165,7 @@ function standingsStories(){
         priority:50,
         group:g.group,
         title:"No one has broken away in Group "+g.group,
-        body:close.length+" players are still packed within one win of the lead — exactly the kind of group where every next match matters."
+        body:close.length+" players are still within one win of the lead — plenty of room for the order to change with every match."
       });
     }
   }
