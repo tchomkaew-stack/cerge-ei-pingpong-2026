@@ -1108,10 +1108,13 @@ function standingsStories(){
       const leaders=unbeaten.slice(0,3);
       const leadWins=Math.max(...leaders.map(x=>x.wins));
       const title=leaders.length>=3
-        ?"Three unbeaten records in Group "+g.group
-        :"Group "+g.group+" leaders — and the chase is on";
-      const body=leaders.map(x=>x.player+" "+x.wins+"–0").join(" · ")+
-        " — they have made the early running, but no top-two place is secured yet and the rest of the group still has room to make a move.";
+        ?"Group "+g.group+" is heating up"
+        :"Momentum at the top of Group "+g.group;
+      const body=leaders.length>=3
+        ? leaders.map(x=>x.player+" "+x.wins+"–0").join(" · ")+
+          " — three unbeaten runs, two automatic places, and nothing locked yet. This race has plenty of twists left."
+        : leaders.map(x=>x.player+" "+x.wins+"–0").join(" · ")+
+          " — they have the momentum, but no ticket is punched yet. The door is still open for the rest of Group "+g.group+".";
       stories.push({
         priority:95+leadWins+(leaders.length>=3?2:0),
         group:g.group,
@@ -1136,8 +1139,8 @@ function standingsStories(){
       stories.push({
         priority:70+Math.max(...perfect.map(x=>x.wins)),
         group:g.group,
-        title:"Two perfect starts in Group "+g.group,
-        body:perfect.map(x=>x.player+" "+x.wins+"–0").join(" · ")+" — both are still spotless, and the chase behind them is very much alive."
+        title:"Two perfect starts, one open race in Group "+g.group,
+        body:perfect.map(x=>x.player+" "+x.wins+"–0").join(" · ")+" — a sparkling start for both, but there is still plenty of time for the group to reshuffle."
       });
     }
   }
@@ -1164,8 +1167,8 @@ function standingsStories(){
       stories.push({
         priority:50,
         group:g.group,
-        title:"No one has broken away in Group "+g.group,
-        body:close.length+" players are still within one win of the lead — plenty of room for the order to change with every match."
+        title:"Group "+g.group+" is anyone's game",
+        body:close.length+" players sit within one win of the lead — one good match can still change the whole picture."
       });
     }
   }
