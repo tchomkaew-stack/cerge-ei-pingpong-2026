@@ -116,7 +116,7 @@
   <button class="tab" data-view="groups">Groups</button>
   <button class="tab" data-view="rules">Rules</button>
   <button class="tab tab-subtle" data-view="all-time">All-time</button>
-  <button id="knockoutTab" class="tab" data-view="knockout" hidden>Knockout</button>
+  <button id="knockoutTab" class="tab" data-view="knockout">Knockout</button>
   <button id="notificationBtn" class="notification-btn" type="button" aria-label="Tournament notifications" aria-expanded="false" aria-controls="notificationPanel">
     <span class="notification-bell" aria-hidden="true">🔔</span>
     <span id="notificationDot" class="notification-dot" aria-hidden="true"></span>
@@ -284,11 +284,19 @@
     </div>
   </section>
 
-  <section id="knockout" class="view" hidden>
+  <section id="knockout" class="view">
     <section class="panel">
-      <div class="section-heading"><div><span class="section-label">KNOCKOUT STAGE</span><h2>Road to the final</h2><p>The knockout draw and results will appear here when available. Select a match for details.</p></div></div>
+      <div class="section-heading"><div><span class="section-label">KNOCKOUT STAGE · PREVIEW</span><h2>Road to the championship</h2><p>Sixteen players enter the knockout stage. The bracket narrows from 8 matches to 4, then 2, and finally the championship match.</p></div></div>
+      <div class="knockout-format-strip" aria-label="Knockout format">
+        <span><strong>16</strong> players</span><b>→</b>
+        <span><strong>8</strong> Round of 16 matches</span><b>→</b>
+        <span><strong>4</strong> Quarterfinals</span><b>→</b>
+        <span><strong>2</strong> Semifinals</span><b>→</b>
+        <span><strong>1</strong> Final</span>
+      </div>
+      <p class="knockout-preview-note">The structure is shown now so you can see the route ahead. Player names will appear once qualification and the knockout draw are confirmed.</p>
       <div id="knockoutBracket" class="knockout-bracket"></div>
-      <div id="knockoutDetail" class="knockout-detail" aria-live="polite">Select a match to see details.</div>
+      <div id="knockoutDetail" class="knockout-detail" aria-live="polite">Knockout pairings have not been published yet.</div>
     </section>
   </section>
 
