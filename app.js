@@ -789,10 +789,36 @@ function parseKnockout(rows){
     date:id>=0?norm(r[id]):"",time:it>=0?norm(r[it]):""
   })).filter(x=>x.round&&x.p1&&x.p2);
 }
+function provisionalKnockoutSeeds(){
+  const byGroup=eligibleByGroup();
+  const automatic=[];
+  const thirdPlace=[];
+  for(const group of "ABCDEFG"){
+    const ranked=byGroup[group]||[];
+    if(ranked[0])automatic.push(ranked[0]);
+    if(ranked[1])automatic.push(ranked[1]);
+    if(ranked[2])thirdPlace.push(ranked[2]);
+  }
+  const wildcardTwo=thirdPlace.sort(compareRank).slice(0,2);
+  return [...automatic,...wildcardTwo]
+    .sort(compareRank)
+    .slice(0,16)
+    .map((x,i)=>({...x,seed:i+1}));
+}
+function provisionalR16Pairs(){
+  const seeds=provisionalKnockoutSeeds();
+  if(seeds.length<16)return [];
+  return Array.from({length:8},(_,i)=>({
+    p1:seeds[i],
+    p2:seeds[15-i]
+  }));
+}
+
 function renderKnockout(){
   const published=state.knockout.length>0;
   $("knockoutTab").hidden=false;
   $("knockout").hidden=false;
+  const provisionalPairs=!published?provisionalR16Pairs():[];
   const rounds=[
     ["R16","Round of 16","8 matches",8],
     ["QF","Quarterfinals","4 matches",4],
@@ -804,18 +830,25 @@ function renderKnockout(){
     return '<div class="knockout-round"><div class="knockout-round-head"><h3>'+label+'</h3><span>'+countLabel+'</span></div>'+
       Array.from({length:count},(_,i)=>{
         const m=matches[i];
-        const p1=m?.p1||"Qualifier TBD";
-        const p2=m?.p2||"Qualifier TBD";
-        return '<button type="button" class="bracket-match '+(m?"bracket-match-published":"bracket-match-preview")+'" '+(m?'data-bracket-round="'+key+'" data-bracket-index="'+i+'"':"disabled")+'>'+
-          '<span class="bracket-match-num">'+(key==="F"?"Championship match":"Match "+(i+1))+'</span>'+
-          '<span class="'+(m&&sheetKey(m.winner)===sheetKey(m.p1)?"bracket-winner":"")+'">'+esc(p1)+'</span>'+
-          '<span class="'+(m&&sheetKey(m.winner)===sheetKey(m.p2)?"bracket-winner":"")+'">'+esc(p2)+'</span>'+
+        const provisional=key==="R16"&&!m?provisionalPairs[i]:null;
+        const p1=m?.p1||provisional?.p1?.player||"Qualifier TBD";
+        const p2=m?.p2||provisional?.p2?.player||"Qualifier TBD";
+        const p1Seed=provisional?.p1?.seed;
+        const p2Seed=provisional?.p2?.seed;
+        return '<button type="button" class="bracket-match '+(m?"bracket-match-published":provisional?"bracket-match-provisional":"bracket-match-preview")+'" '+(m?'data-bracket-round="'+key+'" data-bracket-index="'+i+'"':"disabled")+'>'+
+          '<span class="bracket-match-num">'+(key==="F"?"Championship match":"Match "+(i+1))+(provisional?" · provisional":"")+'</span>'+
+          '<span class="'+(m&&sheetKey(m.winner)===sheetKey(m.p1)?"bracket-winner":"")+'">'+
+            (p1Seed?'<small class="bracket-seed">#'+p1Seed+'</small> ':"")+esc(p1)+'</span>'+
+          '<span class="'+(m&&sheetKey(m.winner)===sheetKey(m.p2)?"bracket-winner":"")+'">'+
+            (p2Seed?'<small class="bracket-seed">#'+p2Seed+'</small> ':"")+esc(p2)+'</span>'+
           '</button>';
       }).join("")+'</div>';
   }).join("");
   $("knockoutDetail").textContent=published
     ?"Select a published match to see details."
-    :"Knockout pairings have not been published yet. The bracket will fill in once qualification and the draw are confirmed.";
+    :provisionalPairs.length===8
+      ?"Provisional only: current qualifiers are seeded 1–16 by wins, win rate, set ratio, then point differential. The strongest current seed faces the weakest. Names and pairings will change automatically as group-stage results change."
+      :"Provisional bracket: more eligible results are needed before all 16 current seeds can be shown.";
 }
 
 let refreshInFlight=null;
