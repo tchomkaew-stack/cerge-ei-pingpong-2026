@@ -1180,7 +1180,16 @@ function renderLeagueStories(){
   const panel=$("aroundLeaguePanel"),list=$("aroundLeague");
   if(!panel||!list)return;
 
-  const stories=standingsStories();
+  const standingStories=standingsStories();
+  const chosen=[];
+
+  // Keep the section varied: one milestone, one group-race story, and one
+  // memorable match when the data supports all three.
+  const milestone=standingStories.find(s=>s.priority>=120);
+  if(milestone)chosen.push(milestone);
+
+  const race=standingStories.find(s=>s.priority<120&&(!milestone||s.group!==milestone.group));
+  if(race)chosen.push(race);
 
   const playedFiveGame=sortedResults(state.results)
     .filter(r=>r.forfeit!=="Y"&&isFiveGameMatch(r))
@@ -1189,17 +1198,28 @@ function renderLeagueStories(){
       return pairs.length===5&&pairs.every(([a,b])=>a>0&&b>0);
     })[0];
 
-  if(stories.length<3&&playedFiveGame){
-    stories.push({
-      priority:40,
+  if(playedFiveGame){
+    const pairs=playedFiveGame.scores.map(scorePair).filter(Boolean);
+    const fifth=pairs[4];
+    chosen.push({
+      priority:110,
       group:playedFiveGame.group,
-      title:"Five games, all the way",
-      body:playedFiveGame.p1+" and "+playedFiveGame.p2+" took it to a deciding fifth in Group "+playedFiveGame.group+" — exactly what a friendly rivalry should look like."
+      title:"A five-game battle in Group "+playedFiveGame.group,
+      body:playedFiveGame.p1+" and "+playedFiveGame.p2+
+        " traded momentum all the way to a deciding fifth"+
+        (fifth?" ("+fifth[0]+"–"+fifth[1]+")":"")+
+        " — one of the closest matches of the group stage so far."
     });
   }
 
-  panel.hidden=!stories.length;
-  list.innerHTML=stories.slice(0,3).map(x=>
+  for(const s of standingStories){
+    if(chosen.length>=3)break;
+    if(chosen.some(x=>x.group===s.group&&x.title===s.title))continue;
+    chosen.push(s);
+  }
+
+  panel.hidden=!chosen.length;
+  list.innerHTML=chosen.slice(0,3).map(x=>
     '<article class="league-story"><strong>'+esc(x.title)+'</strong><p>'+esc(x.body)+'</p></article>'
   ).join("");
 }
