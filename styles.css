@@ -1609,3 +1609,8 @@ footer{line-height:1.5}
   .knockout-format-strip{gap:7px;padding:10px 11px}
   .knockout-format-strip span{font-size:.72rem}
 }
+
+.bracket-match-provisional{background:#fffdf7;border-style:solid;border-color:#eadfbf}
+.bracket-match-provisional:disabled{opacity:1}
+.bracket-seed{display:inline-block;min-width:22px;color:#8b6d1f;font-size:.68rem;font-weight:850}
+.knockout-preview-note strong{color:#8a5b13}
