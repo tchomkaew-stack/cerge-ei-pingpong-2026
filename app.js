@@ -791,23 +791,31 @@ function parseKnockout(rows){
 }
 function renderKnockout(){
   const published=state.knockout.length>0;
-  $("knockoutTab").hidden=!published;
-  $("knockout").hidden=!published;
-  if(!published){if($("knockout").classList.contains("active"))openView("home");return}
-  const rounds=[["R16","Round of 16",8],["QF","Quarterfinals",4],["SF","Semifinals",2],["F","Final",1]];
-  $("knockoutBracket").innerHTML=rounds.map(([key,label,count])=>{
+  $("knockoutTab").hidden=false;
+  $("knockout").hidden=false;
+  const rounds=[
+    ["R16","Round of 16","8 matches",8],
+    ["QF","Quarterfinals","4 matches",4],
+    ["SF","Semifinals","2 matches",2],
+    ["F","Final","1 match",1]
+  ];
+  $("knockoutBracket").innerHTML=rounds.map(([key,label,countLabel,count])=>{
     const matches=state.knockout.filter(x=>x.round===key).sort((a,b)=>a.match-b.match);
-    return '<div class="knockout-round"><h3>'+label+'</h3>'+
+    return '<div class="knockout-round"><div class="knockout-round-head"><h3>'+label+'</h3><span>'+countLabel+'</span></div>'+
       Array.from({length:count},(_,i)=>{
         const m=matches[i];
-        return '<button type="button" class="bracket-match" '+(m?'data-bracket-round="'+key+'" data-bracket-index="'+i+'"':"disabled")+'>'+
-          '<span class="bracket-match-num">Match '+(i+1)+'</span>'+
-          '<span class="'+(m&&sheetKey(m.winner)===sheetKey(m.p1)?"bracket-winner":"")+'">'+esc(m?.p1||"Draw pending")+'</span>'+
-          '<span class="'+(m&&sheetKey(m.winner)===sheetKey(m.p2)?"bracket-winner":"")+'">'+esc(m?.p2||"—")+'</span>'+
+        const p1=m?.p1||"Qualifier TBD";
+        const p2=m?.p2||"Qualifier TBD";
+        return '<button type="button" class="bracket-match '+(m?"bracket-match-published":"bracket-match-preview")+'" '+(m?'data-bracket-round="'+key+'" data-bracket-index="'+i+'"':"disabled")+'>'+
+          '<span class="bracket-match-num">'+(key==="F"?"Championship match":"Match "+(i+1))+'</span>'+
+          '<span class="'+(m&&sheetKey(m.winner)===sheetKey(m.p1)?"bracket-winner":"")+'">'+esc(p1)+'</span>'+
+          '<span class="'+(m&&sheetKey(m.winner)===sheetKey(m.p2)?"bracket-winner":"")+'">'+esc(p2)+'</span>'+
           '</button>';
       }).join("")+'</div>';
   }).join("");
-  $("knockoutDetail").textContent="Select a published match to see details.";
+  $("knockoutDetail").textContent=published
+    ?"Select a published match to see details."
+    :"Knockout pairings have not been published yet. The bracket will fill in once qualification and the draw are confirmed.";
 }
 
 let refreshInFlight=null;
