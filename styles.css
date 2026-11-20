@@ -1586,3 +1586,26 @@ footer{line-height:1.5}
   .alltime-table th,.alltime-table td{padding:9px 8px;font-size:.78rem}
   .alltime-table th{font-size:.65rem}
 }
+
+
+/* Knockout preview: show the road ahead before pairings are confirmed. */
+.knockout-format-strip{
+  display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+  margin:2px 0 10px;padding:12px 14px;
+  border:1px solid var(--ui-border);border-radius:var(--ui-radius-small);
+  background:var(--ui-soft);color:#5f7085;font-size:.78rem
+}
+.knockout-format-strip span{white-space:nowrap}
+.knockout-format-strip strong{color:var(--navy);font-size:.92rem}
+.knockout-format-strip b{color:#9aa8b8;font-weight:700}
+.knockout-preview-note{font-size:.8rem;line-height:1.55;color:#6a788a;margin:0 0 14px}
+.knockout-round-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.knockout-round-head h3{margin:0}
+.knockout-round-head span{font-size:.68rem;color:var(--muted);font-weight:700;white-space:nowrap}
+.bracket-match-preview{background:#fafbfd;border-style:dashed}
+.bracket-match-preview span:not(.bracket-match-num){color:#8491a2;font-weight:650}
+.bracket-match-preview:disabled{opacity:1}
+@media(max-width:560px){
+  .knockout-format-strip{gap:7px;padding:10px 11px}
+  .knockout-format-strip span{font-size:.72rem}
+}
