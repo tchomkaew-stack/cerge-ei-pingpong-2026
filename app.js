@@ -1156,11 +1156,15 @@ function standingsStories(){
           " — three unbeaten runs, two automatic places, and nothing locked yet. This race has plenty of twists left."
         : leaders.map(x=>x.player+" "+x.wins+"–0").join(" · ")+
           " — they have the momentum, but no ticket is punched yet. The door is still open for the rest of Group "+g.group+".";
+      const equalPerfectPair=leaders.length===2&&leaders.every(x=>x.losses===0&&x.wins===leadWins)&&leadWins>=3;
       stories.push({
-        priority:95+leadWins+(leaders.length>=3?2:0),
+        priority:equalPerfectPair?108:95+leadWins+(leaders.length>=3?2:0),
         group:g.group,
-        title,
-        body
+        title:equalPerfectPair?"Two perfect records, one Group "+g.group+" race":title,
+        body:equalPerfectPair
+          ? leaders.map(x=>x.player+" "+x.wins+"–0").join(" · ")+
+            " — two flawless records side by side, and neither has broken clear. Group "+g.group+" is setting up beautifully."
+          : body
       });
     }
   }
